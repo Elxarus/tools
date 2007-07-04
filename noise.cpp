@@ -48,7 +48,7 @@ int main(int argc, char **argv)
 "  nosie ms [options]\n"
 "\n"
 "Options:\n"
-"  ms - lengs in milliseconds\n"
+"  ms - length in milliseconds\n"
 "\n"
 "  output mode:\n"
 "    -p[lay] - playback (*)\n"
