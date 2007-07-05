@@ -1,61 +1,98 @@
-#include <stdlib.h>
 #include <stdio.h>
-#include <math.h>
 
-#include "parsers\ac3\ac3_parser.h"
+#include "source\wav_source.h"
+#include "sink\sink_raw.h"
 #include "parsers\ac3\ac3_enc.h"
-
 #include "filters\convert.h"
 #include "filter_graph.h"
-
-#include "sink\sink_raw.h"
 #include "win32\cpu.h"
-#include "auto_file.h"
+#include "vargs.h"
 
 int main(int argc, char *argv[])
 {
   if (argc < 3)
   {
-    printf("Please, specify input and output file names\n");
+    printf(
+"AC3 Encoder\n"
+"===========\n"
+"This utility is a part of AC3Filter project (http://ac3filter.net)\n"
+"Copyright (c) 2007 by Alexander Vigovsky\n"
+"\n"
+"Usage:\n"
+"  ac3enc input.wav output.ac3 [-br:bitrate]\n"
+    );
     return 1;
   }
 
-  AutoFile f(argv[1]);
-  if (!f.is_open())
+  /////////////////////////////////////////////////////////
+  // Parse arguments
+  /////////////////////////////////////////////////////////
+
+  const char *input_filename = argv[1];
+  const char *output_filename = argv[2];
+  int bitrate = 480000;
+
+  for (int iarg = 3; iarg < argc; iarg++)
   {
-    printf("Cannot open file %s for reading\n", argv[1]);
+    if (is_arg(argv[iarg], "br", argt_num))
+    {
+       bitrate = (int)arg_num(argv[iarg]);
+       continue;
+    }
+
+    printf("Error: unknown option: %s\n", argv[iarg]);
     return 1;
   }
 
-  const int buf_size = 64000;
-  uint8_t buf[buf_size];
-  int buf_data;
+  /////////////////////////////////////////////////////////
+  // Open files
+  /////////////////////////////////////////////////////////
 
-  Converter   conv(2048);
-  AC3Enc      enc;
-  AC3Parser   dec;
-  RAWSink     sink;
-
-  FilterChain chain;
-  chain.add_back(&conv, "Converter");
-  chain.add_back(&enc,  "Encoder");
-
-  conv.set_buffer(AC3_FRAME_SAMPLES);
-  conv.set_format(FORMAT_LINEAR);
-  conv.set_order(win_order);
-
-  if (!enc.set_bitrate(448000) ||
-      !enc.set_input(Speakers(FORMAT_LINEAR, MODE_STEREO, 48000, 32768)))
+  WAVSource src;
+  if (!src.open(input_filename, 65536))
   {
-    printf("Cannot init encoder!\n");
+    printf("Cannot open file %s for reading\n", input_filename);
     return 1;
   }
 
-  if (!sink.open(argv[2]))
+  RAWSink sink;
+  if (!sink.open(output_filename))
   {
     printf("Cannot open file %s for writing!\n", argv[2]);
     return 1;
   }
+
+  /////////////////////////////////////////////////////////
+  // Setup everything
+  /////////////////////////////////////////////////////////
+
+  Converter   conv(2048);
+  AC3Enc      enc;
+  FilterChain chain;
+
+  chain.add_back(&conv, "Converter");
+  chain.add_back(&enc,  "Encoder");
+
+  conv.set_format(FORMAT_LINEAR);
+  conv.set_order(win_order);
+
+  if (!enc.set_bitrate(bitrate))
+  {
+    printf("Wrong bitrate (%i)!\n", bitrate);
+    return 1;
+  }
+
+  Speakers spk = src.get_output();
+  spk.format = FORMAT_LINEAR;
+  if (!enc.set_input(spk))
+  {
+    printf("Cannot encode this file (%s %iHz)!\n", spk.sample_rate);
+    return 1;
+  }
+
+  /////////////////////////////////////////////////////////
+  // Process
+  /////////////////////////////////////////////////////////
 
   Chunk raw_chunk;
   Chunk ac3_chunk;
@@ -66,21 +103,22 @@ int main(int argc, char *argv[])
   double ms = 0;
   double old_ms = 0;
 
-
   cpu_usage.start();
   cpu_total.start();
 
   fprintf(stderr, "0.0%% Frs/err: 0/0\tTime: 0:00.000i\tFPS: 0 CPU: 0%%\r"); 
   int frames = 0;
-  while (!f.eof())
+  while (!src.is_empty())
   {
-    buf_data = f.read(buf, buf_size);
-
-    raw_chunk.set_rawdata(Speakers(FORMAT_PCM16, MODE_STEREO, 48000, 32768), buf, buf_data);
+    if (!src.get_chunk(&raw_chunk))
+    {
+      printf("Data load error!\n");
+      return 1;
+    }
 
     if (!chain.process(&raw_chunk))
     {
-      printf("Load data error!\n");
+      printf("Encoding error!\n");
       return 1;
     }
 
@@ -98,14 +136,14 @@ int main(int argc, char *argv[])
       /////////////////////////////////////////////////////
       // Statistics
 
-      ms = double(cpu_total.get_system_time() / 10000);
+      ms = double(cpu_total.get_system_time() * 1000);
       if (ms > old_ms + 100)
       {
         old_ms = ms;
 
         // Statistics
         fprintf(stderr, "%2.1f%% Frames: %i\tTime: %i:%02i.%03i\tFPS: %i CPU: %.1f%%  \r", 
-          double(f.pos()) * 100.0 / f.size(), 
+          double(src.pos()) * 100.0 / src.size(), 
           frames,
           int(ms/60000), int(ms) % 60000/1000, int(ms) % 1000,
           int(frames * 1000 / (ms+1)),
@@ -115,7 +153,7 @@ int main(int argc, char *argv[])
   }
 
   fprintf(stderr, "%2.1f%% Frames: %i\tTime: %i:%02i.%03i\tFPS: %i CPU: %.1f%%  \n", 
-    double(f.pos()) * 100.0 / f.size(), 
+    double(src.pos()) * 100.0 / src.size(), 
     frames,
     int(ms/60000), int(ms) % 60000/1000, int(ms) % 1000,
     int(frames * 1000 / (ms+1)),
