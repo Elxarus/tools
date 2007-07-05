@@ -51,7 +51,7 @@ int main(int argc, char *argv[])
   WAVSource src;
   if (!src.open(input_filename, 65536))
   {
-    printf("Cannot open file %s for reading\n", input_filename);
+    printf("Cannot open file %s (not a PCM file?)\n", input_filename);
     return 1;
   }
 
