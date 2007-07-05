@@ -3,6 +3,7 @@
 #include <string.h>
 #include <memory.h>
 #include "mpeg_demux.h"
+#include "vargs.h"
 #include "vtime.h"
 
 const int buf_size = 65536;
@@ -185,59 +186,6 @@ void demux(FILE *f, FILE *out, int stream, int substream, bool pes)
 };
 
 ///////////////////////////////////////////////////////////////////////////////
-// Argument parsing
-///////////////////////////////////////////////////////////////////////////////
-
-enum arg_type { argt_exist, argt_bool, argt_num, argt_hex };
-
-bool is_arg(char *arg, const char *name, arg_type type)
-{
-  if (arg[0] != '-') return false;
-  arg++;
-
-  while (*name)
-    if (*name && *arg != *name) 
-      return false;
-    else
-      name++, arg++;
-
-  if (type == argt_exist && *arg == '\0') return true;
-  if (type == argt_bool && (*arg == '\0' || *arg == '+' || *arg == '-')) return true;
-  if (type == argt_num && (*arg == ':' || *arg == '=')) return true;
-  if (type == argt_hex && (*arg == ':' || *arg == '=')) return true;
-
-  return false;
-}
-
-bool arg_bool(char *arg)
-{
-  arg += strlen(arg) - 1;
-  if (*arg == '-') return false;
-  return true;
-}
-
-double arg_num(char *arg)
-{
-  arg += strlen(arg);
-  while (*arg != ':' && *arg != '=')
-    arg--;
-  arg++;
-  return atof(arg);
-}
-
-int arg_hex(char *arg)
-{
-  arg += strlen(arg);
-  while (*arg != ':' && *arg != '=')
-    arg--;
-  arg++;
-
-  int result;
-  sscanf(arg, "%x", &result);
-  return result;
-}
-
-///////////////////////////////////////////////////////////////////////////////
 // Main
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -252,8 +200,8 @@ int main(int argc, char **argv)
   FILE *f = 0;
   FILE *out = 0;
 
-  printf("MPEG Program Stream demuxer.\n"
-         "This utility is part of AC3Filter project (http://ac3filter.net)\n"
+  printf("MPEG Program Stream demuxer\n"
+         "This utility is a part of AC3Filter project (http://ac3filter.net)\n"
          "Copyright (c) 2007 by Alexander Vigovsky\n\n");
   if (argc < 2)
   {
