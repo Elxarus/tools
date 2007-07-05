@@ -4,6 +4,7 @@
 #include "sink\sink_dsound.h"
 #include "sink\sink_wav.h"
 #include "sink\sink_raw.h"
+#include "vargs.h"
 
 const int mask_tbl[] =
 {
