@@ -5,12 +5,6 @@
 #include "sink\sink_wav.h"
 #include "sink\sink_raw.h"
 
-enum arg_type { argt_exist, argt_bool, argt_num };
-bool is_arg(char *arg, const char *name, arg_type type);
-bool arg_bool(char *arg);
-double arg_num(char *arg);
-
-
 const int mask_tbl[] =
 {
   0,
@@ -242,44 +236,4 @@ int main(int argc, char **argv)
   } while (!chunk.eos);
 
   return 0;
-}
-
-
-
-///////////////////////////////////////////////////////////////////////////////
-// Argument parsing
-///////////////////////////////////////////////////////////////////////////////
-
-bool is_arg(char *arg, const char *name, arg_type type)
-{
-  if (arg[0] != '-') return false;
-  arg++;
-
-  while (*name)
-    if (*name && *arg != *name) 
-      return false;
-    else
-      name++, arg++;
-
-  if (type == argt_exist && *arg == '\0') return true;
-  if (type == argt_bool && (*arg == '\0' || *arg == '+' || *arg == '-')) return true;
-  if (type == argt_num && (*arg == ':' || *arg == '=')) return true;
-
-  return false;
-}
-
-bool arg_bool(char *arg)
-{
-  arg += strlen(arg) - 1;
-  if (*arg == '-') return false;
-  return true;
-}
-
-double arg_num(char *arg)
-{
-  arg += strlen(arg);
-  while (*arg != ':' && *arg != '=')
-    arg--;
-  arg++;
-  return atof(arg);
 }

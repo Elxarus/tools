@@ -21,6 +21,7 @@
 
 // other
 #include "win32\cpu.h"
+#include "vargs.h"
 
 
 #define bool2str(v) ((v)? "true": "false")
@@ -64,43 +65,6 @@ const sample_t level_tbl[] =
   1.0
 };
 
-enum arg_type { argt_exist, argt_bool, argt_num };
-
-bool is_arg(char *arg, const char *name, arg_type type)
-{
-  if (arg[0] != '-') return false;
-  arg++;
-
-  while (*name)
-    if (*name && *arg != *name) 
-      return false;
-    else
-      name++, arg++;
-
-  if (type == argt_exist && *arg == '\0') return true;
-  if (type == argt_bool && (*arg == '\0' || *arg == '+' || *arg == '-')) return true;
-  if (type == argt_num && (*arg == ':' || *arg == '=')) return true;
-
-  return false;
-}
-
-bool arg_bool(char *arg)
-{
-  arg += strlen(arg) - 1;
-  if (*arg == '-') return false;
-  return true;
-}
-
-double arg_num(char *arg)
-{
-  arg += strlen(arg);
-  while (*arg != ':' && *arg != '=')
-    arg--;
-  arg++;
-  return atof(arg);
-}
-
-
 int main(int argc, char *argv[])
 {
   if (argc < 2)
@@ -122,11 +86,11 @@ int main(int argc, char *argv[])
 "  {ch} - channel name (l, c, r, sl, sr)\n"
 "\n"
 "  output mode:\n"
-"    -d[ecode] - just decode (used for testing and performance measurements)\n"
-"    -p[lay]   - play file (*)\n"
-"    -r[aw]    - decode to RAW file\n"
-"    -w[av]    - decode to WAV file\n"
-"    -n[othing]- do nothing (to be used with -i option)\n"
+"    -d[ecode]  - just decode (used for testing and performance measurements)\n"
+"    -p[lay]    - play file (*)\n"
+"    -r[aw] file.raw - decode to RAW file\n"
+"    -w[av] file.wav - decode to WAV file\n"
+"    -n[othing] - do nothing (to be used with -i option)\n"
 "  \n"
 "  output options:\n"
 //"    -spdif - spdif output (no other options will work in this mode)\n"
