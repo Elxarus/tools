@@ -1,0 +1,3 @@
+v0.1a - 17.08.2007
+  * Initial release
+  * Built on AC3Filter 1.46 code base
