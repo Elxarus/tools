@@ -761,7 +761,7 @@ int main(int argc, char *argv[])
   double old_time = 0;
 
   sample_t levels[NCHANNELS];
-  sample_t level;
+  sample_t level = 0;
 
   int streams = 0;
 
@@ -779,7 +779,6 @@ int main(int argc, char *argv[])
         if (levels[i] > level)                                                                                 \
           level = levels[i];                                                                                   \
     }                                                                                                          \
-                                                                                                               \
     fprintf(stderr, "%4.1f%% Frs: %-6i Err: %-i Time: %3i:%02i.%03i Level: %-4idB FPS: %-4i CPU: %.1f%%  \r",  \
       file.get_pos(file.relative) * 100,                                                                       \
       file.get_frames(), dvd_graph.dec.get_errors(),                                                           \
