@@ -117,14 +117,14 @@ int main(int argc, char **argv)
     // -f
     if (is_arg(argv[iarg], "f", argt_num))
     {
-      f = (int)arg_num(argv[iarg]);
+      f = arg_num(argv[iarg]);
       continue;
     }
 
     // -f2
     if (is_arg(argv[iarg], "f2", argt_num))
     {
-      f2 = (int)arg_num(argv[iarg]);
+      f2 = arg_num(argv[iarg]);
       continue;
     }
 
