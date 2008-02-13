@@ -18,7 +18,7 @@ int main(int argc, char **argv)
 "========\n"
 "Sample rate conversion utility\n"
 "This utility is a part of AC3Filter project (http://ac3filter.net)\n"
-"Copyright (c) 2007 by Alexander Vigovsky\n"
+"Copyright (c) 2008 by Alexander Vigovsky\n"
 "\n"
 "Usage:\n"
 "  > resample input.wav output.wav [-r[ate]:n] [-q[uality]:n] [-a[ttenuation]:n]\n"
@@ -31,9 +31,9 @@ int main(int argc, char **argv)
 "  attenuation - stopband attenuation in dB (default: 100)\n"
 "\n"
 "Example:\n"
-"  > resample input.wav output.wav -r:44100 -q:0.999 -att:150\n"
-"  Passband width in this example is 0.999. This means that only uppper 44Hz\n"
-"  of the destination bandwidth (22006Hz - 22050Hz) will be distorted.\n"
+"  > resample input.wav output.wav -r:44100 -q:0.999 -a:150\n"
+"  Passband width in this example is 0.999. This means that only uppper 22Hz\n"
+"  of the destination bandwidth (22028Hz - 22050Hz) will be distorted.\n"
 "  Note, that attenuation is large here. Such attenuation is only sensible for\n"
 "  at least 24bit files.\n");
     return 0;
