@@ -148,6 +148,9 @@ int main(int argc, char **argv)
       norm = true;
       continue;
     }
+
+    printf("Error: unknown option: %s\n", argv[iarg]);
+    return -1;
   }
 
   /////////////////////////////////////////////////////////////////////////////
@@ -194,6 +197,28 @@ int main(int argc, char **argv)
     return -1;
   }
 
+  Speakers spk = src.get_output();
+
+  /////////////////////////////////////////////////////////////////////////////
+  // Print processing info
+
+  const char *type_text = "Unknown";
+  switch (type)
+  {
+  case IR_LOW_PASS:  type_text = "Low-pass"; break;
+    case IR_HIGH_PASS: type_text = "High-pass"; break;
+    case IR_BAND_PASS: type_text = "Band-pass"; break;
+    case IR_BAND_STOP: type_text = "Band-stop"; break;
+  };
+
+  if (type == IR_BAND_PASS || type == IR_BAND_STOP)
+    if (norm) printf("Filter: %s\nFirst bound freq: %.8g (%.8g Hz)\nSecound bound freq: %.8g (%.8g Hz)\nTransition band width: %.8g (%.8g Hz)\n", type_text, f, f * spk.sample_rate , f2, f2 * spk.sample_rate, df, df * spk.sample_rate);
+    else printf("Filter: %s\nFirst bound freq: %.8g Hz\nSecound bound freq: %.8g Hz\nTransition band width: %.8g Hz\n", type_text, f, f2, df);
+  else
+    if (norm) printf("Filter: %s\nBound freq: %.8g (%.8g Hz)\nTransition band width: %.8g (%.8g Hz)\n", type_text, f, f * spk.sample_rate, df, df * spk.sample_rate);
+    else printf("Filter: %s\nBound freq: %.8g Hz\nTransition band width: %.8g Hz\n", type_text, f, df);
+  printf("Attenuation: %.8g dB\n", a);
+
   /////////////////////////////////////////////////////////////////////////////
   // Do the job
 
@@ -203,12 +228,24 @@ int main(int argc, char **argv)
   oconv.set_format(src.get_output().format);
 
   ParamIR ir(type, f, f2, df, a, norm);
+  if (ir.get_type(spk.sample_rate) == ir_err)
+  {
+    printf("Error: Incorrect filter parameters\n");
+    return -1;
+  }
+
   Convolver filter(&ir);
 
   FilterChain chain;
   chain.add_back(&iconv, "Input converter");
   chain.add_back(&filter, "Convolver");
   chain.add_back(&oconv, "Output converter");
+
+  if (!chain.set_input(spk))
+  {
+    printf("Error: Cannot init the filter\n");
+    return -1;
+  }
 
   Chunk chunk;
   printf("0%%\r");
