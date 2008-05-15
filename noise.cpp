@@ -1,9 +1,9 @@
 #include <stdio.h>
 
-#include "source\noise.h"
-#include "sink\sink_dsound.h"
-#include "sink\sink_wav.h"
-#include "sink\sink_raw.h"
+#include "source/generator.h"
+#include "sink/sink_dsound.h"
+#include "sink/sink_wav.h"
+#include "sink/sink_raw.h"
 #include "vargs.h"
 
 const int mask_tbl[] =
@@ -220,7 +220,7 @@ int main(int argc, char **argv)
   // Process
   /////////////////////////////////////////////////////////
 
-  Noise noise(spk, spk.sample_size() * spk.nch() * spk.sample_rate * ms / 1000);
+  NoiseGen noise(spk, 0, spk.sample_size() * spk.nch() * spk.sample_rate * ms / 1000);
   Chunk chunk;
   do {
     if (!noise.get_chunk(&chunk))
