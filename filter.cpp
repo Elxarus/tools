@@ -3,7 +3,7 @@
 #include "filter_graph.h"
 #include "filters/convert.h"
 #include "filters/convolver.h"
-#include "fir/param_ir.h"
+#include "fir/param_fir.h"
 #include "vtime.h"
 #include "vargs.h"
 
