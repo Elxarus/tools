@@ -1,6 +1,8 @@
 #include <stdio.h>
 #include "filter_graph.h"
+#include "filters\agc.h"
 #include "filters\convert.h"
+#include "filters\dither.h"
 #include "filters\resample.h"
 #include "source\wav_source.h"
 #include "sink\sink_wav.h"
@@ -21,7 +23,7 @@ int main(int argc, char **argv)
 "Copyright (c) 2008 by Alexander Vigovsky\n"
 "\n"
 "Usage:\n"
-"  > resample input.wav output.wav [-r[ate]:n] [-q[uality]:n] [-a[ttenuation]:n]\n"
+"  > resample input.wav output.wav [-r[ate]:n] [-q[uality]:n] [-a[ttenuation]:n] [-d[ither]]\n"
 "\n"
 "Options:\n"
 "  input.wav  - file to convert\n"
@@ -29,6 +31,7 @@ int main(int argc, char **argv)
 "  rate - new sample rate (deafult: 48000)\n"
 "  quality - passband width (default: 0.99)\n"
 "  attenuation - stopband attenuation in dB (default: 100)\n"
+"  dither - dither the result\n"
 "\n"
 "Example:\n"
 "  > resample input.wav output.wav -r:44100 -q:0.999 -a:150\n"
@@ -44,6 +47,7 @@ int main(int argc, char **argv)
   int sample_rate = 48000;
   double q = 0.99;
   double a = 100;
+  bool do_dither = false;
 
   for (int iarg = 3; iarg < argc; iarg++)
   {
@@ -71,6 +75,14 @@ int main(int argc, char **argv)
       continue;
     }
 
+    // -d[ither]
+    if (is_arg(argv[iarg], "d", argt_bool) || 
+        is_arg(argv[iarg], "dither", argt_bool))
+    {
+      do_dither = arg_bool(argv[iarg]);
+      continue;
+    }
+
     printf("Error: unknown option: %s\n", argv[iarg]);
     return 1;
   }
@@ -95,9 +107,13 @@ int main(int argc, char **argv)
     return -1;
   }
 
+  Speakers spk = src.get_output();
+
   Converter iconv(block_size);
   Converter oconv(block_size);
   Resample resample;
+  AGC agc(1024);
+  Dither dither;
 
   iconv.set_format(FORMAT_LINEAR);
   oconv.set_format(src.get_output().format);
@@ -110,6 +126,12 @@ int main(int argc, char **argv)
   FilterChain chain;
   chain.add_back(&iconv, "Input converter");
   chain.add_back(&resample, "Resample");
+  if (do_dither && spk.level > 128.0)
+  {
+    chain.add_back(&dither, "Dither");
+    dither.level = 0.5 / spk.level;
+  }
+  chain.add_back(&agc, "AGC");
   chain.add_back(&oconv, "Output converter");
 
   Chunk chunk;
