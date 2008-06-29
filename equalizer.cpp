@@ -170,11 +170,10 @@ int main(int argc, char **argv)
 
   chain.add_back(&iconv, "Input converter");
   chain.add_back(&eq, "Equalizer");
-  if (do_dither)
+  if (do_dither && spk.level > 128.0)
   {
     chain.add_back(&dither, "Dither");
-    if (spk.level > 128.0)
-      dither.level = 0.5 / spk.level;
+    dither.level = 0.5 / spk.level;
   }
   chain.add_back(&agc, "AGC");
   chain.add_back(&oconv, "Output converter");
