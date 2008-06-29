@@ -1,3 +1,12 @@
+v0.2a
+  + Equalizer tool - graphic equalizer
+  + Filter tool - parametric filter
+  + Gain tool - amplify/fade
+  + Resample tool - sample rate conversion
+  + WAVDiff - measure the difference between audio files
+  * New options & some bugs fixes
+  * Built on AC3Filter 1.50a code base
+
 v0.1a - 17.08.2007
   * Initial release
   * Built on AC3Filter 1.46 code base

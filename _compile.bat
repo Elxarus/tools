@@ -10,4 +10,5 @@ msdev resample.dsp   /MAKE "resample - Win32 Release"
 msdev spdifer.dsp    /MAKE "spdifer - Win32 Release"
 msdev swab.dsp       /MAKE "swab - Win32 Release"
 msdev valdec.dsp     /MAKE "valdec - Win32 Release"
+msdev wavdiff.dsp    /MAKE "wavdiff - Win32 Release"
 call _clear.bat
