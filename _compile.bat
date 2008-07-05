@@ -1,6 +1,7 @@
 @echo off
 msdev ac3enc.dsp     /MAKE "ac3enc - Win32 Release"
 msdev bsconvert.dsp  /MAKE "bsconvert - Win32 Release"
+msdev cpu_meter.dsp  /MAKE "cpu_meter - Win32 Release"
 msdev equalizer.dsp  /MAKE "equalizer - Win32 Release"
 msdev filter.dsp     /MAKE "filter - Win32 Release"
 msdev gain.dsp       /MAKE "gain - Win32 Release"
