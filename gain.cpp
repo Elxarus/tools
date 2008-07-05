@@ -46,7 +46,7 @@ int main(int argc, char **argv)
 
   for (int iarg = 3; iarg < argc; iarg++)
   {
-    // -dither
+    // -gain
     if (is_arg(argv[iarg], "gain", argt_num))
     {
       gain = db2value(arg_num(argv[iarg]));
