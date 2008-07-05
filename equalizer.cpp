@@ -39,8 +39,8 @@ int main(int argc, char **argv)
 "\n"
 "Example:\n"
 " > equalizer a.wav b.wav -f1:100 -g1:-6 -f2:200 -g2:3 -f3:500\n"
-" Attenuate all frequencies below 100Hz by, gain everything in between\n"
-" 200-500Hz by 3dB, and leave the rest unchanged\n"
+" Attenuate all frequencies below 100Hz by 6dB, gain the band with the center\n"
+" at 200Hz by 3dB, and leave everything after 500Hz unchanged\n"
     );
     return 0;
   }
