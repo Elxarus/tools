@@ -1,8 +1,10 @@
 #include "source/wav_source.h"
 #include "sink/sink_wav.h"
 #include "filter_graph.h"
+#include "filters/agc.h"
 #include "filters/convert.h"
 #include "filters/convolver.h"
+#include "filters/dither.h"
 #include "fir/param_fir.h"
 #include "vtime.h"
 #include "vargs.h"
@@ -38,17 +40,18 @@ int main(int argc, char **argv)
 "  -a    - attenuation factor in dB (100dB by default)\n"
 "  -norm - if this switch is present all frequecies are specified in\n"
 "          normalized form instead of Hz.\n"
+"  -dither - dither the result\n"
 "\n"
 "Examples:\n"
-"  Band-pass filter from 100Hz to 8kHz with 100Hz transition band width.\n"
-"  Attenuate all other frequencies (0-50Hz and 8050 to nyquist) to -100dB.\n"
+"  Band-pass filter from 100Hz to 8kHz with transition width of 100Hz.\n"
+"  Attenuate all other frequencies (0-50Hz and 8050 to nyquist) by 100dB.\n"
 "  > filter in.wav out.wav -bandpass -f:100 -f2:8000 -df:100 -a:100\n"
 "\n"
 "  Low-pass half of the total bandwidth with 1%% transition bandwidth.\n"
 "  Note, that in normalized form nyquist frequency is 0.5 (not 1.0!), so half\n"
 "  of the bandwidth is 0.25 and 1% of the bandwidth is 0.005.\n"
 "  For 48kHz input, this means low-pass filter with 12kHz cutoff frequency\n"
-"  and 24Hz transition band width.\n"
+"  and 240Hz transition band width.\n"
 "  > filter in.wav out.wav -lowpass -f:0.25 -df:0.005\n"
 
     );
@@ -62,6 +65,7 @@ int main(int argc, char **argv)
   double df = 0;
   double a = 100;
   bool norm = false;
+  bool do_dither = false;
   int type = -1;
 
   /////////////////////////////////////////////////////////////////////////////
@@ -146,6 +150,13 @@ int main(int argc, char **argv)
     if (is_arg(argv[iarg], "norm", argt_exist))
     {
       norm = true;
+      continue;
+    }
+
+    // -dither
+    if (is_arg(argv[iarg], "dither", argt_exist))
+    {
+      do_dither = true;
       continue;
     }
 
@@ -244,10 +255,18 @@ int main(int argc, char **argv)
   oconv.set_format(src.get_output().format);
 
   Convolver filter(&fir);
+  AGC agc(1024);
+  Dither dither;
 
   FilterChain chain;
   chain.add_back(&iconv, "Input converter");
   chain.add_back(&filter, "Convolver");
+  if (do_dither && spk.level > 128.0)
+  {
+    chain.add_back(&dither, "Dither");
+    dither.level = 0.5 / spk.level;
+  }
+  chain.add_back(&agc, "AGC");
   chain.add_back(&oconv, "Output converter");
 
   if (!chain.set_input(spk))
