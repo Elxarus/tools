@@ -60,7 +60,13 @@ int main(int argc, char **argv)
 "        1 - PCM 24         4 - PCM 24 (big endian)\n"
 "        2 - PCM 32         5 - PCM 32 (big endian)\n"
 "                           6 - PCM Float\n"
-"  -sr:n - sample rate (default is 48000)\n"
+"  -rate:n - sample rate (default is 48000)\n"
+"\n"
+"  -seed:n - seed for the random numbers generator\n"
+"\n"
+"Example:\n"
+"  > noise 1000 -w noise.wav -fmt:2 -seed:666\n"
+"  Make 1sec stereo PCM Float noise file\n"
     );
     return -1;
   }
@@ -73,6 +79,7 @@ int main(int argc, char **argv)
   int imask = 2;
   int iformat = 0;
   int sample_rate = 48000;
+  int seed = 0;
 
   /////////////////////////////////////////////////////////
   // Parse arguments
@@ -110,13 +117,13 @@ int main(int argc, char **argv)
       continue;
     }
 
-    // -sr - sample rate
-    if (is_arg(argv[iarg], "sr", argt_num))
+    // -rate - sample rate
+    if (is_arg(argv[iarg], "rate", argt_num))
     {
       sample_rate = int(arg_num(argv[iarg]));
       if (sample_rate < 0)
       {
-        printf("-sr : incorrect sample rate");
+        printf("-rate : incorrect sample rate");
         return 1;
       }
       continue;
@@ -192,6 +199,17 @@ int main(int argc, char **argv)
       continue;
     }
 
+    // -seed - RNG seed
+    if (is_arg(argv[iarg], "seed", argt_num))
+    {
+      seed = int(arg_num(argv[iarg]));
+      if (sample_rate < 0)
+      {
+        printf("-rate : incorrect sample rate");
+        return 1;
+      }
+      continue;
+    }
 
     printf("Error: unknown option: %s\n", argv[iarg]);
     return 1;
@@ -220,7 +238,8 @@ int main(int argc, char **argv)
   // Process
   /////////////////////////////////////////////////////////
 
-  NoiseGen noise(spk, 0, spk.sample_size() * spk.nch() * spk.sample_rate * ms / 1000);
+  double size = double(spk.sample_size() * spk.nch() * spk.sample_rate) * double(ms) / 1000;
+  NoiseGen noise(spk, seed, (size_t)size);
   Chunk chunk;
   do {
     if (!noise.get_chunk(&chunk))
