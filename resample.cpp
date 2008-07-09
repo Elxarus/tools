@@ -146,7 +146,7 @@ int main(int argc, char **argv)
     {
       char buf[1024];
       chain.chain_text(buf, array_size(buf));
-      printf("Processing error. Chain dump:\n", buf);
+      printf("Processing error. Chain dump: %s\n", buf);
       return -1;
     }
 
