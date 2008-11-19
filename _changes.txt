@@ -1,3 +1,11 @@
+v0.3b
+  + cpu_meter - measure the CPU time used by a program
+  + noise: seed option
+  + filter: dither option
+  * filter: corect output file size
+  * noise: correctly makes large files
+
+
 v0.2a
   + Equalizer tool - graphic equalizer
   + Filter tool - parametric filter
