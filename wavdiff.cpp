@@ -25,7 +25,7 @@ int main(int argc, char **argv)
 "automated testing\n"
 "\n"
 "This utility is a part of AC3Filter project (http://ac3filter.net)\n"
-"Copyright (c) 2008 by Alexander Vigovsky\n"
+"Copyright (c) 2008-2009 by Alexander Vigovsky\n"
 "\n"
 "Usage:\n"
 "  > wavdiff a.wav b.wav [-diff c.wav] [-max_diff:n] [-max_rms:n] [-max_mean:n]\n"

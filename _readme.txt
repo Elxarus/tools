@@ -7,7 +7,7 @@ AC3Filter tools is a set of command-line tools for manipulating audio files.
 These tools are part of AC3Fiter project. AC3Filter is a set of high quality
 freeware audio decoder and processor programs. See more at http://ac3filter.net
 
-Copyright (c) 2007 by Alexander Vigovsky (xvalex@mail.ru)
+Copyright (c) 2007-2009 by Alexander Vigovsky (xvalex@mail.ru)
 
 
 License:

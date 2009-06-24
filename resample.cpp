@@ -20,7 +20,7 @@ int main(int argc, char **argv)
 "========\n"
 "Sample rate conversion utility\n"
 "This utility is a part of AC3Filter project (http://ac3filter.net)\n"
-"Copyright (c) 2008 by Alexander Vigovsky\n"
+"Copyright (c) 2008-2009 by Alexander Vigovsky\n"
 "\n"
 "Usage:\n"
 "  > resample input.wav output.wav [-r[ate]:n] [-q[uality]:n] [-a[ttenuation]:n] [-d[ither]]\n"

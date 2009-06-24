@@ -76,7 +76,7 @@ int main(int argc, char *argv[])
 "Audio decoder/processor/player utility\n"
 "\n"
 "This utility is a part of AC3Filter project (http://ac3filter.net)\n"
-"Copyright (c) 2006 by Alexander Vigovsky\n"
+"Copyright (c) 2006-2009 by Alexander Vigovsky\n"
 "\n"
 "Usage:\n"
 "  valdec some_file [options]\n"

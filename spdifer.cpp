@@ -38,7 +38,7 @@ int main(int argc, const char **argv)
 "according to IEC 61937\n"
 "\n"
 "This utility is a part of AC3Filter project (http://ac3filter.net)\n"
-"Copyright (c) 2007 by Alexander Vigovsky\n"
+"Copyright (c) 2007-2009 by Alexander Vigovsky\n"
 "\n"
 "Usage:\n"
 "  spdifer input_file output_file [-raw | -wav]\n"
