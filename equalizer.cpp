@@ -47,11 +47,10 @@ int main(int argc, char **argv)
 
   const char *input_filename = argv[1];
   const char *output_filename = argv[2];
-  int freq[max_bands];
-  double gain[max_bands];
+  EqBand bands[max_bands];
   bool do_dither = false;
 
-  for (i = 0; i < max_bands; i++) freq[i] = 0, gain[i] = 0;
+  for (i = 0; i < max_bands; i++) bands[i].freq = 0, bands[i].gain = 0;
 
   /////////////////////////////////////////////////////////////////////////////
   // Parse arguments
@@ -73,19 +72,19 @@ int main(int argc, char **argv)
         sprintf(buf, "f%i", i);
         if (is_arg(argv[iarg], buf, argt_num))
         {
-          freq[i] = (int)arg_num(argv[iarg]);
+          bands[i].freq = (int)arg_num(argv[iarg]);
           break;
         }
 
         sprintf(buf, "g%i", i);
         if (is_arg(argv[iarg], buf, argt_num))
         {
-          if (freq[i] == 0)
+          if (bands[i].freq == 0)
           {
             printf("Unknown freqency for band %i (define the band's frequency before the gain)\n", i);
             return -1;
           }
-          gain[i] = arg_num(argv[iarg]);
+          bands[i].gain = arg_num(argv[iarg]);
           break;
         }
       }
@@ -103,17 +102,17 @@ int main(int argc, char **argv)
 
   int nbands = 0;
   for (i = 0; i < max_bands; i++)
-    if (freq[i] != 0)
+    if (bands[i].freq != 0)
     {
-      freq[nbands] = freq[i];
-      gain[nbands] = gain[i];
+      bands[nbands].freq = bands[i].freq;
+      bands[nbands].gain = bands[i].gain;
       nbands++;
     }
 
   if (nbands < max_bands)
   {
-    freq[nbands] = 0;
-    gain[nbands] = 0;
+    bands[nbands].freq = 0;
+    bands[nbands].gain = 0;
   }
 
   if (nbands == 0)
@@ -124,10 +123,10 @@ int main(int argc, char **argv)
 
   printf("%i bands:\n", nbands);
   for (i = 0; i < nbands; i++)
-    printf("%i Hz => %g dB\n", freq[i], gain[i]);
+    printf("%i Hz => %g dB\n", bands[i].freq, bands[i].gain);
 
   for (i = 0; i < nbands; i++)
-    gain[i] = db2value(gain[i]);
+    bands[i].gain = db2value(bands[i].gain);
 
   /////////////////////////////////////////////////////////////////////////////
   // Open files
@@ -158,7 +157,7 @@ int main(int argc, char **argv)
 
   Equalizer eq;
   eq.set_enabled(true);
-  if (!eq.set_bands(nbands, freq, gain))
+  if (!eq.set_bands(bands, nbands))
   {
     printf("Bad band parameters\n");
     return -1;

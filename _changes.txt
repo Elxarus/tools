@@ -1,3 +1,7 @@
+0.4b
+  * Use AC3Filter 1.62 code. This includes an updated equalizer,
+    precise PCM passthrough, etc.
+
 v0.3b
   + cpu_meter - measure the CPU time used by a program
   + noise: seed option
