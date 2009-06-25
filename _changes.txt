@@ -2,7 +2,7 @@ v0.3b - not yet released
   * Use AC3Filter 1.62 code. This includes an updated equalizer,
     precise PCM passthrough, etc.
   + Large files >2Gb support
-  + RF64 WAV files support
+  + RF64 WAV files support (thanks to Serge Dyomin)
   + cpu_meter - measure the CPU time used by a program
   + noise: seed option
   + filter: dither option
