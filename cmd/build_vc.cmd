@@ -10,13 +10,13 @@ rem Determine the project name
 if exist %1.sln goto set_project
 if exist %1.dsw goto set_project
 
-for %%f in (*.dsw) do set workspace=%%f
-for %%f in (*.sln) do set solution=%%f
+for %%f in (*.dsw) do set workspace=%%~nf
+for %%f in (*.sln) do set solution=%%~nf
 goto parse2
 
 :set_project
-set workspace=%1.dsw
-set solution=%1.sln
+set workspace=%1
+set solution=%1
 shift
 
 rem -------------------------------------------------------
@@ -76,7 +76,7 @@ if not defined vcbuild (
 if not defined vcbuild goto no_vc9
 if "%solution%"=="" goto err_solution
 
-vcbuild %solution% "%config%|%platform%"
+vcbuild %solution%.sln "%config%|%platform%"
 goto end
 
 rem -------------------------------------------------------

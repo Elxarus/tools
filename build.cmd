@@ -1,1 +1,1 @@
-@call cmd\build_vc tools %*
+@for %%f in (*.sln) do call cmd\build_vc %%~nf %*
