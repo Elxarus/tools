@@ -1,15 +1,11 @@
-*.log
-*.exe
-*.dll
+Debug
+Release
+x64
 
 *.aps
 *.ncb
 *.plg
 *.opt
 *.dep
-
-Debug
-Release
-Perf
-ChangeLog
-x64
+*.suo
+*.user
