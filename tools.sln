@@ -49,6 +49,9 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "spdifer", "spdifer.vcproj",
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "swab", "swab.vcproj", "{433A80DF-DB0F-4F6B-A95A-AB912E22FF90}"
+	ProjectSection(ProjectDependencies) = postProject
+		{30FCD216-1CAD-48FD-BF4B-337572F7EC9C} = {30FCD216-1CAD-48FD-BF4B-337572F7EC9C}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "valdec", "valdec.vcproj", "{871889DF-6EF7-461F-AC1B-7DA682CB79A0}"
 	ProjectSection(ProjectDependencies) = postProject
