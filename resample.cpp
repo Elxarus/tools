@@ -126,7 +126,7 @@ int main(int argc, char **argv)
   FilterChain chain;
   chain.add_back(&iconv, "Input converter");
   chain.add_back(&resample, "Resample");
-  if (do_dither && spk.level > 128.0)
+  if (do_dither && !spk.is_floating_point())
   {
     chain.add_back(&dither, "Dither");
     dither.level = 0.5 / spk.level;
