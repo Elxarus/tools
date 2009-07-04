@@ -1,0 +1,14 @@
+syntax:glob
+
+# Build files
+Debug
+Release
+
+# Visual studio intermediate files
+*.aps
+*.ncb
+*.plg
+*.opt
+*.dep
+*.suo
+*.user
