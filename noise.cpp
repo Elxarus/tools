@@ -239,7 +239,7 @@ int main(int argc, char **argv)
   /////////////////////////////////////////////////////////
 
   double size = double(spk.sample_size() * spk.nch() * spk.sample_rate) * double(ms) / 1000;
-  NoiseGen noise(spk, seed, (size_t)size);
+  NoiseGen noise(spk, seed, (uint64_t) size);
   Chunk chunk;
   do {
     if (!noise.get_chunk(&chunk))
