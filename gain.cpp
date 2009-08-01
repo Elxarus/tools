@@ -39,7 +39,7 @@ int main(int argc, char **argv)
 
   const char *input_filename = argv[1];
   const char *output_filename = argv[2];
-  double gain;
+  double gain = 1.0;
 
   /////////////////////////////////////////////////////////////////////////////
   // Parse arguments
