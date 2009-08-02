@@ -1,6 +1,6 @@
 v0.3b - not yet released
-  * Use AC3Filter 1.62 code. This includes an updated equalizer,
-    precise PCM passthrough, etc.
+  * Use AC3Filter 1.63 code. This includes an updated equalizer, precise PCM passthrough, etc.
+  + x64 build
   + Large files >2Gb support
   + RF64 WAV files support (thanks to Serge Dyomin)
   + cpu_meter - measure the CPU time used by a program
