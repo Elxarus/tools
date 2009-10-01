@@ -1,3 +1,9 @@
+v0.31b - 01.10.2009
+  Bugfix release
+  ! Cannot read WAV files in some cases
+  ! Default bitrate at ac3enc fixed
+  ! Use WAVE_FORMAT_EXTENSIBLE for multichannel WAV files
+
 v0.3b - 04.08.2009
   * Use AC3Filter 1.62 code. This includes an updated equalizer, precise PCM passthrough, etc.
   + x64 build

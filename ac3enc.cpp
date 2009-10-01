@@ -30,7 +30,7 @@ int main(int argc, char *argv[])
 
   const char *input_filename = argv[1];
   const char *output_filename = argv[2];
-  int bitrate = 480000;
+  int bitrate = 448000;
 
   for (int iarg = 3; iarg < argc; iarg++)
   {
