@@ -105,7 +105,7 @@ goto fail
 :usage
 echo Usage: %~n0 [project] [compiler] [platform] [configuration]
 echo Where
-echp   project: project to compile (without .sln or .dsw extension)
+echo   project: project to compile (without .sln or .dsw extension)
 echo   compiler: vc6 (Visual Studio 97) or vc9 (VisualStudio 2008)
 echo   paltform: Win32 or x64
 echo   configuration: Debug or Release

@@ -1,4 +1,4 @@
-rem @echo off
+@echo off
 
 set ver_text=%1
 set ver_file=%2
@@ -43,10 +43,10 @@ rem -------------------------------------------------------
 rem Build projects
 :build_projects
 
-call build.cmd win32
+call cmd\build_vc tools Win32
 if errorlevel 1 goto fail
 
-call build.cmd x64
+call cmd\build_vc tools x64
 if errorlevel 1 goto fail
 
 rem -------------------------------------------------------
