@@ -1,7 +1,8 @@
 #include <stdio.h>
 #include <conio.h>
 #include <math.h>
-    
+#include <string>
+
 // parsers
 #include "parsers\file_parser.h"
 
@@ -27,9 +28,23 @@
 #define bool2str(v) ((v)? "true": "false")
 #define bool2str1(v) ((v)? "+": "-")
 
-
-const char *_ch_names[NCHANNELS] = { "Left", "Center", "Right", "Left surround", "Right surround", "LFE" };
-
+struct {
+  const char *name;
+  int ch;
+} ch_map[] =
+{
+  { "l",  CH_L  },
+  { "c",  CH_C  },
+  { "r",  CH_R  },
+  { "sl", CH_SL },
+  { "sr", CH_SR },
+  { "bl", CH_BL },
+  { "bc", CH_BC },
+  { "br", CH_BR },
+  { "cl", CH_CL },
+  { "cr", CH_CR },
+  { "lfe", CH_LFE }
+};
 
 const int mask_tbl[] =
 {
@@ -51,22 +66,12 @@ const int format_tbl[] =
   FORMAT_PCM24_BE,
   FORMAT_PCM32_BE,
   FORMAT_PCMFLOAT,
-};
-
-const sample_t level_tbl[] = 
-{
-  32767,
-  8388607,
-  2147483647,
-  1.0,
-  32767,
-  8388607,
-  2147483647,
-  1.0
+  FORMAT_PCMDOUBLE,
 };
 
 int main(int argc, char *argv[])
 {
+  using std::string;
   if (argc < 2)
   {
     printf(
@@ -103,7 +108,7 @@ int main(int argc, char *argv[])
 "      (*) 0 - PCM 16        3 - PCM 16 (big endian)\n"
 "          1 - PCM 24        4 - PCM 24 (big endian)\n" 
 "          2 - PCM 32        5 - PCM 32 (big endian)\n"
-"                 6 - PCM Float\n" 
+"          6 - PCM Float     7 - PCM Double\n" 
 "  \n"
 "  format selection:\n"
 "    -ac3 - force ac3 (do not autodetect format)\n"
@@ -125,6 +130,8 @@ int main(int argc, char *argv[])
 "    -lfelev:N - lfe mix level (dB)\n"
 "    -gain:N - master gain (dB)\n"
 "    -gain_{ch}:N - output channel gain (dB)\n"
+"    -{in}_{out}:N - factor (not dB!) for a matrix cell at input channel {in}\n"
+"          and output channels {out}. Effective only when auto_matrix is off.\n"
 "  \n"
 "  automatic gain control options:\n"
 "    -agc[+|-] - auto gain control on(*)/off\n"
@@ -139,12 +146,19 @@ int main(int argc, char *argv[])
 "          0 - samples (*) 2 - meters      4 - feet   \n"
 "          1 - ms          3 - cm          5 - inches \n"
 "    -delay_{ch}:N - delay for channel {ch} (in samples by default)\n" 
-
+"  \n"
+"  Channel names used at some parameters:\n"
+"  l  - front left       bl - back left\n"
+"  c  - front center     bc - back center\n"
+"  r  - front right      sr - back right\n"
+"  sl - surround left    cl - center left\n"
+"  sr - surround right   cr - center right\n"
+"  lfe - lfe or subwoofer\n"
            );
     return 1;
   }
 
-  int i;
+  int i, j;
   bool print_info = false;
   bool print_opt  = false;
   bool print_hist = false;
@@ -167,13 +181,18 @@ int main(int argc, char *argv[])
   // Arrays
 
   int delay_units = DELAY_SP;
-  float delays[NCHANNELS];
-  for (i = 0; i < NCHANNELS; i++)
+  float delays[CH_NAMES];
+  for (i = 0; i < CH_NAMES; i++)
     delays[i] = 0;
 
-  sample_t gains[NCHANNELS];
-  for (i = 0; i < NCHANNELS; i++)
+  sample_t gains[CH_NAMES];
+  for (i = 0; i < CH_NAMES; i++)
     gains[i] = 1.0;
+
+  matrix_t m;
+  for (i = 0; i < CH_NAMES; i++)
+    for (j = 0; j < CH_NAMES; j++)
+      m[i][j] = 0;
 
   /////////////////////////////////////////////////////////
   // Output format
@@ -467,42 +486,32 @@ int main(int argc, char *argv[])
       continue;
     }
 
-    // -gain_l
-    if (is_arg(argv[iarg], "gain_l", argt_num))
+    // -gain_{ch}
+    bool have_gain = false;
+    for (i = 0; i < array_size(ch_map) && !have_gain; i++)
     {
-      gains[CH_L] = db2value(arg_num(argv[iarg]));
-      continue;
+      string opt = string("gain_") + ch_map[i].name;
+      if (is_arg(argv[iarg], opt.c_str(), argt_num))
+      {
+        gains[ch_map[i].ch] = db2value(arg_num(argv[iarg]));
+        have_gain = true;
+      }
     }
-    // -gain_c
-    if (is_arg(argv[iarg], "gain_c", argt_num))
-    {
-      gains[CH_C] = db2value(arg_num(argv[iarg]));
-      continue;
-    }
-    // -gain_r
-    if (is_arg(argv[iarg], "gain_r", argt_num))
-    {
-      gains[CH_R] = db2value(arg_num(argv[iarg]));
-      continue;
-    }
-    // -gain_sl
-    if (is_arg(argv[iarg], "gain_sl", argt_num))
-    {
-      gains[CH_SL] = db2value(arg_num(argv[iarg]));
-      continue;
-    }
-    // -gain_sr
-    if (is_arg(argv[iarg], "gain_sr", argt_num))
-    {
-      gains[CH_SR] = db2value(arg_num(argv[iarg]));
-      continue;
-    }
-    // -gain_lfe
-    if (is_arg(argv[iarg], "gain_lfe", argt_num))
-    {
-      gains[CH_LFE] = db2value(arg_num(argv[iarg]));
-      continue;
-    }
+    if (have_gain) continue;
+
+    // -{ch}_{ch}
+    bool have_matrix = false;
+    for (i = 0; i < array_size(ch_map) && !have_matrix; i++)
+      for (j = 0; j < array_size(ch_map) && !have_matrix; j++)
+      {
+        string opt = string(ch_map[i].name) + string("_") + string(ch_map[j].name);
+        if (is_arg(argv[iarg], opt.c_str(), argt_num))
+        {
+          m[ch_map[i].ch][ch_map[j].ch] = arg_num(argv[iarg]);
+          have_matrix = true;
+        }
+      }
+    if (have_matrix) continue;
 
     ///////////////////////////////////////////////////////
     // Auto gain control options
@@ -577,42 +586,18 @@ int main(int argc, char *argv[])
       continue;
     }
 
-    // -delay_l
-    if (is_arg(argv[iarg], "delay_l", argt_num))
+    // -delay_{ch}
+    bool have_delay = false;
+    for (i = 0; i < array_size(ch_map) && !have_delay; i++)
     {
-      delays[CH_L] = float(arg_num(argv[iarg]));
-      continue;
+      string opt = string("delay_") + string(ch_map[i].name);
+      if (is_arg(argv[iarg], opt.c_str(), argt_num))
+      {
+        delays[ch_map[i].ch] = float(arg_num(argv[iarg]));
+        have_delay = true;
+      }
     }
-    // -delay_c
-    if (is_arg(argv[iarg], "delay_c", argt_num))
-    {
-      delays[CH_C] = float(arg_num(argv[iarg]));
-      continue;
-    }
-    // -delay_r
-    if (is_arg(argv[iarg], "delay_r", argt_num))
-    {
-      delays[CH_R] = float(arg_num(argv[iarg]));
-      continue;
-    }
-    // -delay_sl
-    if (is_arg(argv[iarg], "delay_sl", argt_num))
-    {
-      delays[CH_SL] = float(arg_num(argv[iarg]));
-      continue;
-    }
-    // -delay_sr
-    if (is_arg(argv[iarg], "delay_sr", argt_num))
-    {
-      delays[CH_SR] = float(arg_num(argv[iarg]));
-      continue;
-    }
-    // -delay_lfe
-    if (is_arg(argv[iarg], "delay_lfe", argt_num))
-    {
-      delays[CH_LFE] = float(arg_num(argv[iarg]));
-      continue;
-    }
+    if (have_delay) continue;
 
     printf("Error: unknown option: %s\n", argv[iarg]);
     return 1;
@@ -669,13 +654,13 @@ int main(int argc, char *argv[])
 
   dvd_graph.proc.set_delay_units(delay_units);
   dvd_graph.proc.set_delays(delays);
-
   dvd_graph.proc.set_output_gains(gains);
-
   dvd_graph.proc.set_input_order(std_order);
   dvd_graph.proc.set_output_order(win_order);
+  if (!dvd_graph.proc.get_auto_matrix())
+    dvd_graph.proc.set_matrix(m);
   
-  Speakers user_spk(format_tbl[iformat], mask_tbl[imask], 0, level_tbl[iformat]);
+  Speakers user_spk(format_tbl[iformat], mask_tbl[imask], 0);
   if (!dvd_graph.set_user(user_spk))
   {
     printf("Error: unsupported user format (%s %s %i)\n", 
