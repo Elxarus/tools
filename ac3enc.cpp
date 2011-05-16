@@ -21,7 +21,7 @@ int main(int argc, char *argv[])
 "Usage:\n"
 "  ac3enc input.wav output.ac3 [-br:bitrate_kbps]\n"
     );
-    return 1;
+    return -1;
   }
 
   /////////////////////////////////////////////////////////
@@ -41,7 +41,7 @@ int main(int argc, char *argv[])
     }
 
     printf("Error: unknown option: %s\n", argv[iarg]);
-    return 1;
+    return -1;
   }
 
   /////////////////////////////////////////////////////////
@@ -51,15 +51,15 @@ int main(int argc, char *argv[])
   WAVSource src;
   if (!src.open(input_filename, 65536))
   {
-    printf("Cannot open file %s (not a PCM file?)\n", input_filename);
-    return 1;
+    printf("Error: Cannot open file (not a PCM file?) '%s'\n", input_filename);
+    return -1;
   }
 
   RAWSink sink;
   if (!sink.open_file(output_filename))
   {
-    printf("Cannot open file %s for writing!\n", argv[2]);
-    return 1;
+    printf("Error: Cannot open file for writing '%s'\n", argv[2]);
+    return -1;
   }
 
   /////////////////////////////////////////////////////////
@@ -78,15 +78,15 @@ int main(int argc, char *argv[])
 
   if (!enc.set_bitrate(bitrate*1000))
   {
-    printf("Wrong bitrate (%i)!\n", bitrate);
-    return 1;
+    printf("Error: Wrong bitrate %ikbps!\n", bitrate);
+    return -1;
   }
 
   Speakers spk = src.get_output();
   if (!chain.open(spk))
   {
-    printf("Cannot encode this file (%s)!\n", spk.print().c_str());
-    return 1;
+    printf("Error: Cannot encode file (%s)!\n", spk.print().c_str());
+    return -1;
   }
   printf("Input format: %s\n", spk.print().c_str());
   printf("Output format: AC3 %ikbps\n", bitrate);
@@ -107,7 +107,7 @@ int main(int argc, char *argv[])
   cpu_usage.start();
   cpu_total.start();
 
-  printf("0.0%% Frs/err: 0/0\tTime: 0:00.000i\tFPS: 0 CPU: 0%%\r"); 
+  fprintf(stderr, "0.0%% Frs/err: 0/0\tTime: 0:00.000i\tFPS: 0 CPU: 0%%\r"); 
   int frames = 0;
 
   try
@@ -127,7 +127,7 @@ int main(int argc, char *argv[])
           old_ms = ms;
 
           // Statistics
-          printf("%2.1f%% Frames: %i\tTime: %i:%02i.%03i\tFPS: %i CPU: %.1f%%  \r", 
+          fprintf(stderr, "%2.1f%% Frames: %i\tTime: %i:%02i.%03i\tFPS: %i CPU: %.1f%%  \r", 
             double(src.pos()) * 100.0 / src.size(), 
             frames,
             int(ms/60000), int(ms) % 60000/1000, int(ms) % 1000,
@@ -148,7 +148,7 @@ int main(int argc, char *argv[])
   catch (ValibException &e)
   {
     printf("Processing error:\n%s", boost::diagnostic_information(e).c_str());
-    return 1;
+    return -1;
   }
 
   ms = double(cpu_total.get_system_time() * 1000);
