@@ -139,7 +139,7 @@ int main(int argc, char **argv)
     {
       if (sink)
       {
-        printf("-play : ambigous output mode\n");
+        printf("-play : ambiguous output mode\n");
         return 1;
       }
 
@@ -153,7 +153,7 @@ int main(int argc, char **argv)
     {
       if (sink)
       {
-        printf("-raw : ambigous output mode\n");
+        printf("-raw : ambiguous output mode\n");
         return 1;
       }
       if (argc - iarg < 1)
@@ -179,7 +179,7 @@ int main(int argc, char **argv)
     {
       if (sink)
       {
-        printf("-wav : ambigous output mode\n");
+        printf("-wav : ambiguous output mode\n");
         return 1;
       }
       if (argc - iarg < 1)

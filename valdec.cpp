@@ -235,7 +235,7 @@ int main(int argc, char *argv[])
     {
       if (parser)
       {
-        printf("-ac3 : ambigous parser\n");
+        printf("-ac3 : ambiguous parser\n");
         return 1;
       }
 
@@ -248,7 +248,7 @@ int main(int argc, char *argv[])
     {
       if (parser)
       {
-        printf("-dts : ambigous parser\n");
+        printf("-dts : ambiguous parser\n");
         return 1;
       }
 
@@ -261,7 +261,7 @@ int main(int argc, char *argv[])
     {
       if (parser)
       {
-        printf("-mpa : ambigous parser\n");
+        printf("-mpa : ambiguous parser\n");
         return 1;
       }
 
@@ -315,7 +315,7 @@ int main(int argc, char *argv[])
     {
       if (sink)
       {
-        printf("-decode : ambigous output mode\n");
+        printf("-decode : ambiguous output mode\n");
         return 1;
       }
 
@@ -331,7 +331,7 @@ int main(int argc, char *argv[])
     {
       if (sink)
       {
-        printf("-play : ambigous output mode\n");
+        printf("-play : ambiguous output mode\n");
         return 1;
       }
 
@@ -347,7 +347,7 @@ int main(int argc, char *argv[])
     {
       if (sink)
       {
-        printf("-raw : ambigous output mode\n");
+        printf("-raw : ambiguous output mode\n");
         return 1;
       }
       if (argc - iarg < 1)
@@ -369,7 +369,7 @@ int main(int argc, char *argv[])
     {
       if (sink)
       {
-        printf("-wav : ambigous output mode\n");
+        printf("-wav : ambiguous output mode\n");
         return 1;
       }
       if (argc - iarg < 1)
@@ -391,7 +391,7 @@ int main(int argc, char *argv[])
     {
       if (sink)
       {
-        printf("-nothing : ambigous output mode\n");
+        printf("-nothing : ambiguous output mode\n");
         return 1;
       }
 

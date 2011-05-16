@@ -234,7 +234,7 @@ int main(int argc, char **argv)
     {
       if (mode != mode_none)
       {
-        printf("-i : ambigous mode\n");
+        printf("-i : ambiguous mode\n");
         return 1;
       }
 
@@ -252,7 +252,7 @@ int main(int argc, char **argv)
       }
       if (mode != mode_none)
       {
-        printf("-d : ambigous mode\n");
+        printf("-d : ambiguous mode\n");
         return 1;
       }
 
@@ -271,7 +271,7 @@ int main(int argc, char **argv)
       }
       if (mode != mode_none)
       {
-        printf("-p : ambigous mode\n");
+        printf("-p : ambiguous mode\n");
         return 1;
       }
 

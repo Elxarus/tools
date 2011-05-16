@@ -78,7 +78,7 @@ int main(int argc, char **argv)
     {
       if (type != -1)
       {
-        printf("Filter type is ambigous\n");
+        printf("Filter type is ambiguous\n");
         return -1;
       }
       type = FIR_LOW_PASS;
@@ -89,7 +89,7 @@ int main(int argc, char **argv)
     {
       if (type != -1)
       {
-        printf("Filter type is ambigous\n");
+        printf("Filter type is ambiguous\n");
         return -1;
       }
       type = FIR_HIGH_PASS;
@@ -100,7 +100,7 @@ int main(int argc, char **argv)
     {
       if (type != -1)
       {
-        printf("Filter type is ambigous\n");
+        printf("Filter type is ambiguous\n");
         return -1;
       }
       type = FIR_BAND_PASS;
@@ -111,7 +111,7 @@ int main(int argc, char **argv)
     {
       if (type != -1)
       {
-        printf("Filter type is ambigous\n");
+        printf("Filter type is ambiguous\n");
         return -1;
       }
       type = FIR_BAND_STOP;
