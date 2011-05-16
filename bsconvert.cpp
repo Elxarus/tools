@@ -3,13 +3,14 @@
 #include "auto_file.h"
 #include "parser.h"
 #include "bitstream.h"
+#include "filters/spdifer.h"
 #include "parsers/mpa/mpa_header.h"
 #include "parsers/ac3/ac3_header.h"
 #include "parsers/dts/dts_header.h"
 #include "parsers/spdif/spdif_header.h"
-#include "parsers/spdif/spdif_parser.h"
 #include "parsers/multi_header.h"
 #include "source/file_parser.h"
+#include "source/source_filter.h"
 
 inline const char *bs_name(int bs_type);
 inline bool is_14bit(int bs_type)
@@ -141,30 +142,42 @@ int main(int argc, char **argv)
   }
 
   /////////////////////////////////////////////////////////
+  // Raw stream source
+
+  Despdifer despdifer;
+  SourceFilter raw_source;
+  Source *source = &in_file;
+  if (in_file.get_output().format == FORMAT_SPDIF)
+  {
+    raw_source.set(&in_file, &despdifer);
+    source = &raw_source;
+  }
+
+  /////////////////////////////////////////////////////////
   // Process data
 
   int frames = 0;
   int bs_target = bs_type;
   bs_conv_t conv;
-  Chunk in_chunk;
+  Chunk chunk;
+  HeaderInfo hdr;
   Rawdata buf(multi_header.max_frame_size() / 7 * 8 + 8);
-
+  
   try {
     in_file.seek(0); // Force new stream
-    while (in_file.get_chunk(in_chunk))
+    while (source->get_chunk(chunk))
     {
-      frames++;
-
       ///////////////////////////////////////////////////////
       // New stream
 
-      if (in_file.new_stream())
+      if (source->new_stream())
       {
-        if (frames)
-          printf("\n\n");
-
+        if (frames) printf("\n\n");
         printf("%s", in_file.stream_info().c_str());
-        HeaderInfo hdr = in_file.header_info();
+
+        hdr = (in_file.get_output().format == FORMAT_SPDIF)?
+          despdifer.raw_header_info():
+          hdr = in_file.header_info();
 
         bs_target = bs_type;
         if (is_14bit(bs_target) && hdr.spk.format != FORMAT_DTS)
@@ -181,6 +194,7 @@ int main(int argc, char **argv)
         if (!conv)
           printf("Error: Cannot convert!\n");
       }
+      frames++;
 
       ///////////////////////////////////////////////////////
       // Skip the stream if we cannot convert it
@@ -195,7 +209,7 @@ int main(int argc, char **argv)
       // Do the job
 
       uint8_t *new_frame = buf.begin();
-      size_t new_size = conv(in_chunk.rawdata, in_chunk.size, new_frame);
+      size_t new_size = conv(chunk.rawdata, chunk.size, new_frame);
 
       // Correct DTS header
       if (bs_target == BITSTREAM_14LE)
