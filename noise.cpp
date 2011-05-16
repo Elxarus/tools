@@ -1,6 +1,8 @@
 #include <stdio.h>
 
+#include "filters/convert.h"
 #include "source/generator.h"
+#include "source/source_filter.h"
 #include "sink/sink_dsound.h"
 #include "sink/sink_wav.h"
 #include "sink/sink_raw.h"
@@ -26,6 +28,7 @@ const int format_tbl[] =
   FORMAT_PCM24_BE,
   FORMAT_PCM32_BE,
   FORMAT_PCMFLOAT,
+  FORMAT_PCMDOUBLE,
 };
 
 
@@ -59,14 +62,15 @@ int main(int argc, char **argv)
 "    (*) 0 - PCM 16         3 - PCM 16 (big endian)\n"
 "        1 - PCM 24         4 - PCM 24 (big endian)\n"
 "        2 - PCM 32         5 - PCM 32 (big endian)\n"
-"                           6 - PCM Float\n"
+"                 6 - PCM Float\n"
+"                 7 - PCM Double\n"
 "  -rate:n - sample rate (default is 48000)\n"
 "\n"
 "  -seed:n - seed for the random numbers generator\n"
 "\n"
 "Example:\n"
-"  > noise 1000 -w noise.wav -fmt:2 -seed:666\n"
-"  Make 1sec stereo PCM Float noise file\n"
+"  > noise 1000 -w noise.wav -fmt:2 -seed:666 -gain:-6\n"
+"  Make 1sec stereo PCM Float noise file with level -6db\n"
     );
     return -1;
   }
@@ -80,6 +84,7 @@ int main(int argc, char **argv)
   int iformat = 0;
   int sample_rate = 48000;
   int seed = 0;
+  double gain_db = 1.0;
 
   /////////////////////////////////////////////////////////
   // Parse arguments
@@ -100,7 +105,7 @@ int main(int argc, char **argv)
       if (imask < 1 || imask > array_size(mask_tbl))
       {
         printf("-spk : incorrect speaker configuration\n");
-        return 1;
+        return -1;
       }
       continue;
     }
@@ -112,7 +117,7 @@ int main(int argc, char **argv)
       if (iformat < 0 || iformat > array_size(format_tbl))
       {
         printf("-fmt : incorrect sample format");
-        return 1;
+        return -1;
       }
       continue;
     }
@@ -124,7 +129,7 @@ int main(int argc, char **argv)
       if (sample_rate < 0)
       {
         printf("-rate : incorrect sample rate");
-        return 1;
+        return -1;
       }
       continue;
     }
@@ -140,7 +145,7 @@ int main(int argc, char **argv)
       if (sink)
       {
         printf("-play : ambiguous output mode\n");
-        return 1;
+        return -1;
       }
 
       sink = &dsound;
@@ -154,19 +159,19 @@ int main(int argc, char **argv)
       if (sink)
       {
         printf("-raw : ambiguous output mode\n");
-        return 1;
+        return -1;
       }
       if (argc - iarg < 1)
       {
         printf("-raw : specify a file name\n");
-        return 1;
+        return -1;
       }
 
       const char * filename = argv[++iarg];
-      if (!raw.open(filename))
+      if (!raw.open_file(filename))
       {
-        printf("-raw : cannot open file %s\n", filename);
-        return 1;
+        printf("-raw : cannot open file '%s'\n", filename);
+        return -1;
       }
 
       sink = &raw;
@@ -180,19 +185,19 @@ int main(int argc, char **argv)
       if (sink)
       {
         printf("-wav : ambiguous output mode\n");
-        return 1;
+        return -1;
       }
       if (argc - iarg < 1)
       {
         printf("-wav : specify a file name\n");
-        return 1;
+        return -1;
       }
 
       const char * filename = argv[++iarg];
-      if (!wav.open(filename))
+      if (!wav.open_file(filename))
       {
-        printf("-raw : cannot open file %s\n", filename);
-        return 1;
+        printf("-wav : cannot open file '%s'\n", filename);
+        return -1;
       }
 
       sink = &wav;
@@ -206,13 +211,13 @@ int main(int argc, char **argv)
       if (sample_rate < 0)
       {
         printf("-rate : incorrect sample rate");
-        return 1;
+        return -1;
       }
       continue;
     }
 
     printf("Error: unknown option: %s\n", argv[iarg]);
-    return 1;
+    return -1;
   }
 
   /////////////////////////////////////////////////////////
@@ -228,32 +233,52 @@ int main(int argc, char **argv)
   Speakers spk(format_tbl[iformat], mask_tbl[imask], sample_rate);
   printf("Opening %s %s %iHz audio output...\n", spk.format_text(), spk.mode_text(), spk.sample_rate);
 
-  if (!sink->set_input(spk))
+  if (!sink->open(spk))
   {
     printf("Error: Cannot open audio output!");
-    return 1;
+    return -1;
   }
 
   /////////////////////////////////////////////////////////
   // Process
   /////////////////////////////////////////////////////////
 
-  double size = double(spk.sample_size() * spk.nch() * spk.sample_rate) * double(ms) / 1000;
-  NoiseGen noise(spk, seed, (uint64_t) size);
-  Chunk chunk;
-  do {
-    if (!noise.get_chunk(&chunk))
-    {
-      printf("noise.get_chunk() failed\n");
-      return 1;
-    }
+  NoiseGen noise;
+  Converter conv(1024);
+  SourceFilter fp_noise;
+  uint64_t out_size = uint64_t(double(spk.sample_size() * spk.nch() * spk.sample_rate) * double(ms) / 1000);
 
-    if (!sink->process(&chunk))
+  Source *source = &noise;
+  if (spk.is_floating_point())
+  {
+    Speakers noise_spk = spk;
+    noise_spk.format = FORMAT_LINEAR;
+    uint64_t samples = uint64_t(double(spk.sample_rate) * double(ms) / 1000);
+    noise.init(noise_spk, seed, samples);
+    conv.set_format(spk.format);
+
+    fp_noise.set(&noise, &conv);
+    source = &fp_noise;
+  }
+  else
+    noise.init(spk, seed, out_size);
+
+  Chunk chunk;
+  uint64_t pos = 0;
+
+  try {
+    while (source->get_chunk(chunk))
     {
-      printf("sink.process() failed\n");
-      return 1;
+      sink->process(chunk);
+      pos += chunk.size;
+      fprintf(stderr, "%.0f%%\r", double(pos)*100/out_size);
     }
-  } while (!chunk.eos);
+  }
+  catch (ValibException &e)
+  {
+    printf("Processing error:\n%s", boost::diagnostic_information(e).c_str());
+    return -1;
+  }
 
   return 0;
 }
