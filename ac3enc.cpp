@@ -1,11 +1,11 @@
 #include <stdio.h>
 
-#include "source\wav_source.h"
-#include "sink\sink_raw.h"
-#include "parsers\ac3\ac3_enc.h"
-#include "filters\convert.h"
+#include "source/wav_source.h"
+#include "sink/sink_raw.h"
+#include "parsers/ac3/ac3_enc.h"
+#include "filters/convert.h"
 #include "filter_graph.h"
-#include "win32\cpu.h"
+#include "win32/cpu.h"
 #include "vargs.h"
 
 int main(int argc, char *argv[])
@@ -16,7 +16,7 @@ int main(int argc, char *argv[])
 "AC3 Encoder\n"
 "===========\n"
 "This utility is a part of AC3Filter project (http://ac3filter.net)\n"
-"Copyright (c) 2007-2009 by Alexander Vigovsky\n"
+"Copyright (c) 2007-2011 by Alexander Vigovsky\n"
 "\n"
 "Usage:\n"
 "  ac3enc input.wav output.ac3 [-br:bitrate]\n"

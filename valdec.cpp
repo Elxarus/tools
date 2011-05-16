@@ -4,24 +4,24 @@
 #include <string>
 
 // parsers
-#include "parsers\file_parser.h"
+#include "parsers/file_parser.h"
 
-#include "parsers\ac3\ac3_header.h"
-#include "parsers\dts\dts_header.h"
-#include "parsers\mpa\mpa_header.h"
-#include "parsers\spdif\spdif_header.h"
-#include "parsers\multi_header.h"
+#include "parsers/ac3/ac3_header.h"
+#include "parsers/dts/dts_header.h"
+#include "parsers/mpa/mpa_header.h"
+#include "parsers/spdif/spdif_header.h"
+#include "parsers/multi_header.h"
 
 // sinks
-#include "sink\sink_raw.h"
-#include "sink\sink_wav.h"
-#include "sink\sink_dsound.h"
+#include "sink/sink_raw.h"
+#include "sink/sink_wav.h"
+#include "sink/sink_dsound.h"
 
 // filters
-#include "filters\dvd_graph.h"
+#include "filters/dvd_graph.h"
 
 // other
-#include "win32\cpu.h"
+#include "win32/cpu.h"
 #include "vargs.h"
 
 
@@ -81,7 +81,7 @@ int main(int argc, char *argv[])
 "Audio decoder/processor/player utility\n"
 "\n"
 "This utility is a part of AC3Filter project (http://ac3filter.net)\n"
-"Copyright (c) 2006-2009 by Alexander Vigovsky\n"
+"Copyright (c) 2006-2011 by Alexander Vigovsky\n"
 "\n"
 "Usage:\n"
 "  valdec some_file [options]\n"

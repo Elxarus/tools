@@ -2,12 +2,12 @@
 
 #include "parser.h"
 #include "bitstream.h"
-#include "parsers\mpa\mpa_header.h"
-#include "parsers\ac3\ac3_header.h"
-#include "parsers\dts\dts_header.h"
-#include "parsers\spdif\spdif_header.h"
-#include "parsers\spdif\spdif_parser.h"
-#include "parsers\multi_header.h"
+#include "parsers/mpa/mpa_header.h"
+#include "parsers/ac3/ac3_header.h"
+#include "parsers/dts/dts_header.h"
+#include "parsers/spdif/spdif_header.h"
+#include "parsers/spdif/spdif_parser.h"
+#include "parsers/multi_header.h"
 #include "auto_file.h"
 
 
@@ -30,7 +30,7 @@ int main(int argc, char **argv)
 "stream type to the most common byte stream.\n"
 "\n"
 "This utility is a part of AC3Filter project (http://ac3filter.net)\n"
-"Copyright (c) 2007-2009 by Alexander Vigovsky\n"
+"Copyright (c) 2007-2011 by Alexander Vigovsky\n"
 "\n"
 "Usage:\n"
 "  Detect file type and print file information:\n"

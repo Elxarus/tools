@@ -21,7 +21,7 @@ int main(int argc, char **argv)
 "======\n"
 "Simple parametric audio filter\n"
 "This utility is a part of AC3Filter project (http://ac3filter.net)\n"
-"Copyright (c) 2008-2009 by Alexander Vigovsky\n"
+"Copyright (c) 2008-2011 by Alexander Vigovsky\n"
 "\n"
 "Usage:\n"
 "  > filter input.wav output.wav -<type> -f:n [-f2:n] -df:n [-a:n] [-norm]\n"

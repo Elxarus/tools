@@ -37,7 +37,7 @@ int main(int argc, char **argv)
     printf(
 "Noise generator\n"
 "This utility is part of AC3Filter project (http://ac3filter.net)\n"
-"Copyright (c) 2007-2009 by Alexander Vigovsky\n\n"
+"Copyright (c) 2007-2011 by Alexander Vigovsky\n\n"
 
 "Usage:\n"
 "  nosie ms [options]\n"
