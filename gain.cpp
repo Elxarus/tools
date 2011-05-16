@@ -1,9 +1,9 @@
 #include <math.h>
 #include "source/wav_source.h"
 #include "sink/sink_wav.h"
-#include "filter_graph.h"
 #include "filters/agc.h"
 #include "filters/convert.h"
+#include "filters/filter_graph.h"
 #include "filters/gain.h"
 #include "vtime.h"
 #include "vargs.h"
@@ -63,18 +63,23 @@ int main(int argc, char **argv)
   WAVSource src(input_filename, block_size);
   if (!src.is_open())
   {
-    printf("Error: cannot open file: %s\n", input_filename);
+    printf("Error: cannot open file '%s'\n", input_filename);
     return -1;
   }
 
   WAVSink sink(output_filename);
-  if (!sink.is_open())
+  if (!sink.is_file_open())
   {
-    printf("Error: cannot open file: %s\n", output_filename);
+    printf("Error: cannot open file for writing '%s'\n", output_filename);
     return -1;
   }
 
   Speakers spk = src.get_output();
+  if (!sink.open(spk))
+  {
+    printf("Error: cannot write wav of format %s\n", spk.print().c_str());
+    return -1;
+  }
 
   /////////////////////////////////////////////////////////////////////////////
   // Build the chain
@@ -89,12 +94,12 @@ int main(int argc, char **argv)
   gain_filter.gain = gain;
 
   FilterChain chain;
-  chain.add_back(&iconv, "Input converter");
-  chain.add_back(&gain_filter, "Gain");
-  chain.add_back(&agc, "AGC");
-  chain.add_back(&oconv, "Output converter");
+  chain.add_back(&iconv);
+  chain.add_back(&gain_filter);
+  chain.add_back(&agc);
+  chain.add_back(&oconv);
 
-  if (!chain.set_input(spk))
+  if (!chain.open(spk))
   {
     printf("Error: cannot start processing\n");
     return -1;
@@ -103,28 +108,32 @@ int main(int argc, char **argv)
   /////////////////////////////////////////////////////////////////////////////
   // Do the job
 
-  Chunk chunk;
-  printf("0%%\r");
-
-  vtime_t t = local_time() + 0.1;
-  while (!src.is_empty())
+  try
   {
-    src.get_chunk(&chunk);
-    if (!chain.process_to(&chunk, &sink))
+    Chunk in_chunk, out_chunk;
+    printf("0%%\r");
+    vtime_t t = local_time() + 0.1;
+    while (src.get_chunk(in_chunk))
     {
-      char buf[1024];
-      chain.chain_text(buf, array_size(buf));
-      printf("Processing error. Chain dump: %s\n", buf);
-      return -1;
-    }
+      while (chain.process(in_chunk, out_chunk))
+        sink.process(out_chunk);
 
-    if (local_time() > t)
-    {
-      t += 0.1;
-      double pos = double(src.pos()) * 100 / src.size();
-      printf("%i%%\r", (int)pos);
+      if (local_time() > t)
+      {
+        t += 0.1;
+        double pos = double(src.pos()) * 100 / src.size();
+        printf("%i%%\r", (int)pos);
+      }
     }
+    while (chain.flush(out_chunk))
+      sink.process(out_chunk);
+    printf("100%%\n");
   }
-  printf("100%%\n");
+  catch (ValibException &e)
+  {
+    printf("Processing error:\n%s", boost::diagnostic_information(e).c_str());
+    return -1;
+  }
+
   return 0;
 }
