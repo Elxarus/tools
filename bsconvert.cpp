@@ -1,5 +1,6 @@
 #include <stdio.h>
 
+#include "auto_file.h"
 #include "parser.h"
 #include "bitstream.h"
 #include "parsers/mpa/mpa_header.h"
@@ -8,15 +9,11 @@
 #include "parsers/spdif/spdif_header.h"
 #include "parsers/spdif/spdif_parser.h"
 #include "parsers/multi_header.h"
-#include "auto_file.h"
-
+#include "source/file_parser.h"
 
 inline const char *bs_name(int bs_type);
-void print_info(StreamBuffer &stream, int bs_type);
 inline bool is_14bit(int bs_type)
-{
-  return bs_type == BITSTREAM_14LE || bs_type == BITSTREAM_14BE;
-}
+{ return bs_type == BITSTREAM_14LE || bs_type == BITSTREAM_14BE; }
 
 int main(int argc, char **argv)
 {
@@ -97,206 +94,127 @@ int main(int argc, char **argv)
       bs_type = BITSTREAM_14LE;
     else
     {
-      printf("Unknown stream format: %s", argv[3]);
+      printf("Error: Unknown stream format: %s\n", argv[3]);
       return -1;
     }
     break;
 
   default:
-    printf("Wrong number of arguments");
+    printf("Error: Wrong number of arguments\n");
     return -1;
   }
 
   /////////////////////////////////////////////////////////
-  // Allocate buffers
+  // Open file and print file info
 
-  const HeaderParser *headers[] = { &spdif_header, &ac3_header, &mpa_header, &dts_header };
+  const HeaderParser *headers[] = { &ac3_header, &mpa_header, &dts_header, &spdif_header };
   MultiHeader multi_header(headers, array_size(headers));
 
-  SPDIFParser spdif_parser(false);
-  StreamBuffer stream(&multi_header);
-
-  const size_t buf_size = 512*1024;
-  uint8_t *buf = new uint8_t[buf_size];
-
-  const size_t framebuf_size = (multi_header.max_frame_size()) / 7 * 8 + 8;
-  uint8_t *framebuf = new uint8_t[framebuf_size];
-
-  if (!buf || !framebuf)
+  FileParser in_file;
+  if (!in_file.open(in_filename, &multi_header, 1024*1024))
   {
-    printf("Cannot allocate buffer");
+    printf("Error: Cannot open file '%s'\n", in_filename);
     return -1;
   }
 
-  /////////////////////////////////////////////////////////
-  // Open input file
-
-  AutoFile in_file(in_filename);
-  if (!in_file.is_open())
+  if (!in_file.probe())
   {
-    printf("Cannot open file %s", in_filename);
+    printf("Error: Cannot determine file format\n");
     return -1;
   }
 
-  /////////////////////////////////////////////////////////
-  // Detect input file format and print stream info
-
-  while (in_file.pos() < 1000000 && !stream.is_in_sync())
+  printf("%s", in_file.file_info().c_str());
+  if (!out_filename)
   {
-    size_t data_size = in_file.read(buf, buf_size);
-    uint8_t *ptr = buf;
-    uint8_t *end = ptr + data_size;
-    stream.load_frame(&ptr, end);
-  }
-
-  if (!stream.is_in_sync())
-  {
-    printf("Cannot detect file format\n");
-    return -1;
-  }
-  else
-  {
-    printf("%s\n", in_filename);
-    print_info(stream, bs_type);
+    printf("%s", in_file.stream_info().c_str());
+    return 0;
   }
 
   /////////////////////////////////////////////////////////
   // Open output file
 
-  if (!out_filename)
-    return 0;
-
   AutoFile out_file(out_filename, "wb");
   if (!out_file.is_open())
   {
-    printf("Cannot open file %s\n", out_filename);
+    printf("Error: Cannot open file for writing '%s'\n", out_filename);
     return -1;
   }
 
   /////////////////////////////////////////////////////////
   // Process data
 
-  bs_conv_t conv;
-  bool show_info = false;
-
   int frames = 0;
   int bs_target = bs_type;
-  bool is_spdif = false;
-  in_file.seek(0);
-  stream.reset();
+  bs_conv_t conv;
+  Chunk in_chunk;
+  Rawdata buf(multi_header.max_frame_size() / 7 * 8 + 8);
 
-  while (!in_file.eof())
-  {
-    size_t data_size = in_file.read(buf, buf_size);
-    uint8_t *ptr = buf;
-    uint8_t *end = ptr + data_size;
+  try {
+    in_file.seek(0); // Force new stream
+    while (in_file.get_chunk(in_chunk))
+    {
+      frames++;
 
-    while (ptr < end)
-      if (stream.load_frame(&ptr, end))
+      ///////////////////////////////////////////////////////
+      // New stream
+
+      if (in_file.new_stream())
       {
-        frames++;
+        if (frames)
+          printf("\n\n");
 
-        // Switch to a new stream
-        if (stream.is_new_stream())
+        printf("%s", in_file.stream_info().c_str());
+        HeaderInfo hdr = in_file.header_info();
+
+        bs_target = bs_type;
+        if (is_14bit(bs_target) && hdr.spk.format != FORMAT_DTS)
         {
-          if (show_info)
-          {
-            printf("\n\n");
-            print_info(stream, bs_type);
-          }
-          else
-            show_info = true;
-
-          // find conversion function
-          HeaderInfo hdr = stream.header_info();
-          is_spdif = hdr.spk.format == FORMAT_SPDIF;
-          if (is_spdif)
-          {
-            if (spdif_parser.parse_frame(stream.get_frame(), stream.get_frame_size()))
-              hdr = spdif_parser.header_info();
-            else
-              hdr.drop();
-          }
-
-          bs_target = bs_type;
-          if (is_14bit(bs_target) && hdr.spk.format != FORMAT_DTS)
-            bs_target = BITSTREAM_8;
-
-          printf("Conversion from %s to %s\n", bs_name(hdr.bs_type), bs_name(bs_target));
-          conv = bs_conversion(hdr.bs_type, bs_target);
-          if (!conv)
-            printf("Cannot convert this stream!\n");
+          printf(
+            "\nWARNING!!!\n"
+            "%s does not support 14bit stream format!\n"
+            "It will be converted to byte stream.\n", hdr.spk.format_text());
+          bs_target = BITSTREAM_8;
         }
 
-        // Do the job here
-        if (conv)
-        {
-          const uint8_t *frame = stream.get_frame();
-          size_t frame_size = stream.get_frame_size();
-
-          if (is_spdif)
-            if (spdif_parser.parse_frame(stream.get_frame(), stream.get_frame_size()))
-            {
-              frame = spdif_parser.get_rawdata();
-              frame_size = spdif_parser.get_rawsize();
-            }
-            else
-            {
-              frame = 0;
-              frame_size = 0;
-            }
-
-          size_t framebuf_data = (*conv)(frame, frame_size, framebuf);
-
-          // Correct DTS header
-          if (bs_target == BITSTREAM_14LE)
-            framebuf[3] = 0xe8;
-          else if (bs_target == BITSTREAM_14BE)
-            framebuf[2] = 0xe8;
-
-          out_file.write(framebuf, framebuf_data);
-        }
+        printf("Conversion from %s to %s\n", bs_name(hdr.bs_type), bs_name(bs_target));
+        conv = bs_conversion(hdr.bs_type, bs_target);
+        if (!conv)
+          printf("Error: Cannot convert!\n");
       }
 
-    if (conv)
+      ///////////////////////////////////////////////////////
+      // Skip the stream if we cannot convert it
+
+      if (!conv)
+      {
+        fprintf(stderr, "Skipping: %i\r", frames);
+        continue;
+      }
+
+      ///////////////////////////////////////////////////////
+      // Do the job
+
+      uint8_t *new_frame = buf.begin();
+      size_t new_size = conv(in_chunk.rawdata, in_chunk.size, new_frame);
+
+      // Correct DTS header
+      if (bs_target == BITSTREAM_14LE)
+        new_frame[3] = 0xe8;
+      else if (bs_target == BITSTREAM_14BE)
+        new_frame[2] = 0xe8;
+
+      out_file.write(new_frame, new_size);
       fprintf(stderr, "Frame: %i\r", frames);
-    else
-      fprintf(stderr, "Skipping: %i\r", frames);
+    }
   }
+  catch (ValibException &e)
+  {
+    printf("Processing error:\n%s", boost::diagnostic_information(e).c_str());
+    return -1;
+  }
+
   printf("Frames found: %i\n\n", frames);
-
-  delete buf;
   return 0;
-}
-
-
-void print_info(StreamBuffer &stream, int bs_type)
-{
-  const size_t info_size = 1024;
-  char info[info_size];
-  stream.stream_info(info, info_size);
-  printf(info);
-  printf("\n");
-
-  SPDIFParser spdif_parser(false);
-  HeaderInfo hdr = stream.header_info();
-
-  bool is_spdif = hdr.spk.format == FORMAT_SPDIF;
-  if (is_spdif)
-  {
-    if (spdif_parser.parse_frame(stream.get_frame(), stream.get_frame_size()))
-      hdr = spdif_parser.header_info();
-    else
-      printf("\nERROR!!!\nCannot parse SPDIF frame\n");
-  }
-
-  if (is_14bit(bs_type) && hdr.spk.format != FORMAT_DTS)
-  {
-    printf(
-"\nWARNING!!!\n"
-"%s does not support 14bit stream format!\n"
-"It will be converted to byte stream.\n\n", hdr.spk.format_text());
-  }
 }
 
 inline const char *bs_name(int bs_type)
@@ -310,6 +228,6 @@ inline const char *bs_name(int bs_type)
     case BITSTREAM_32LE: return "32bit low endian";
     case BITSTREAM_14BE: return "14bit big endian";
     case BITSTREAM_14LE: return "14bit low endian";
-    default: return "??";
+    default: return "unknown";
   }
 }
