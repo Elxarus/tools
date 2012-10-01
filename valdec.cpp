@@ -4,7 +4,7 @@
 #include <string>
 
 // parsers
-#include "parsers/file_parser.h"
+#include "source/file_parser.h"
 
 #include "parsers/ac3/ac3_header.h"
 #include "parsers/dts/dts_header.h"
@@ -16,6 +16,7 @@
 #include "sink/sink_raw.h"
 #include "sink/sink_wav.h"
 #include "sink/sink_dsound.h"
+#include "sink/sink_null.h"
 
 // filters
 #include "filters/dvd_graph.h"
@@ -24,11 +25,7 @@
 #include "win32/cpu.h"
 #include "vargs.h"
 
-
-#define bool2str(v) ((v)? "true": "false")
-#define bool2str1(v) ((v)? "+": "-")
-
-struct {
+const struct {
   const char *name;
   int ch;
 } ch_map[] =
@@ -46,30 +43,56 @@ struct {
   { "lfe", CH_LFE }
 };
 
-const int mask_tbl[] =
+const enum_opt mask_tbl[] =
 {
-  0,
-  MODE_MONO,
-  MODE_STEREO,
-  MODE_3_0,
-  MODE_2_2,
-  MODE_3_2,
-  MODE_5_1
+  { "mono",   MODE_MONO },
+  { "stereo", MODE_STEREO },
+  { "quadro", MODE_2_2 },
+  { "2.1",    MODE_2_0_LFE },
+  { "4.1",    MODE_2_2_LFE },
+  { "5.1",    MODE_5_1 },
+  { "6.1",    MODE_6_1 },
+  { "7.1",    MODE_7_1 },
+  { "l",      CH_MASK_L },
+  { "c",      CH_MASK_C },
+  { "r",      CH_MASK_R },
+  { "sl",     CH_MASK_SL },
+  { "sr",     CH_MASK_SR },
+  { "cl",     CH_MASK_CL },
+  { "cr",     CH_MASK_CR },
+  { "lfe",    CH_MASK_LFE },
+  // Backwards compatibility
+  { "0",      0 },
+  { "1",      MODE_MONO },
+  { "2",      MODE_STEREO },
+  { "3",      MODE_3_0 },
+  { "4",      MODE_QUADRO },
+  { "5",      MODE_3_2 },
+  { "6",      MODE_5_1 },
 };
 
-const int format_tbl[] = 
+const enum_opt format_tbl[] = 
 {
-  FORMAT_PCM16,
-  FORMAT_PCM24,
-  FORMAT_PCM32,
-  FORMAT_PCM16_BE,
-  FORMAT_PCM24_BE,
-  FORMAT_PCM32_BE,
-  FORMAT_PCMFLOAT,
-  FORMAT_PCMDOUBLE,
+  { "pcm16",   FORMAT_PCM16 },
+  { "pcm24",   FORMAT_PCM24 },
+  { "pcm32",   FORMAT_PCM32 },
+  { "pcm16be", FORMAT_PCM16_BE },
+  { "pcm24be", FORMAT_PCM24_BE },
+  { "pcm32be", FORMAT_PCM32_BE },
+  { "pcm_float",  FORMAT_PCMFLOAT },
+  { "pcm_double", FORMAT_PCMDOUBLE },
+  // Backwards compatibility
+  { "0", FORMAT_PCM16 },
+  { "1", FORMAT_PCM24 },
+  { "2", FORMAT_PCM32 },
+  { "3", FORMAT_PCM16_BE },
+  { "4", FORMAT_PCM24_BE },
+  { "5", FORMAT_PCM32_BE },
+  { "6", FORMAT_PCMFLOAT },
+  { "7", FORMAT_PCMDOUBLE },
 };
 
-int main(int argc, char *argv[])
+int valdec(int argc, char *argv[])
 {
   using std::string;
   if (argc < 2)
@@ -81,7 +104,7 @@ int main(int argc, char *argv[])
 "Audio decoder/processor/player utility\n"
 "\n"
 "This utility is a part of AC3Filter project (http://ac3filter.net)\n"
-"Copyright (c) 2006-2011 by Alexander Vigovsky\n"
+"Copyright (c) 2006-2012 by Alexander Vigovsky\n"
 "\n"
 "Usage:\n"
 "  valdec some_file [options]\n"
@@ -98,17 +121,52 @@ int main(int argc, char *argv[])
 "    -n[othing] - do nothing (to be used with -i option)\n"
 "  \n"
 "  output options:\n"
-//"    -spdif - spdif output (no other options will work in this mode)\n"
-"    -spk:n - set number of output channels:\n"
-"      (*) 0 - from file     4 - 2/2 (quadro)\n" 
+"    -spk:{layout} - :\n"
+"      Defines output channel layout. You may choose a predefined layout and/or\n"
+"      specify each channel individually with several -spk options. When layout\n"
+"      is not set, output layout will match the input layout.\n"
+"\n"
+"      Predefined channel layouts:\n"
+"          mono    c\n"
+"          stereo  l, c\n"
+"          quadro  l, r, sl, sr\n"
+"          2.1     c, lfe\n"
+"          4.1     l, r, sl, sr, lfe\n"
+"          5.1     l, c, r, sl, sr, lfe\n"
+"          6.1     l, c, r, sl, sr, bc, lfe\n"
+"          7.1     l, c, r, sl, sr, bl, br, lfe\n"
+"\n"
+"      Predefined channel layouts for backwards compatibility:\n"
+"          0 - not set       4 - 2/2 (quadro)\n"
 "          1 - 1/0 (mono)    5 - 3/2 (5 ch)\n"
 "          2 - 2/0 (stereo)  6 - 3/2+SW (5.1)\n"
 "          3 - 3/0 (surround)\n"
-"    -fmt:n - set sample format:\n"
-"      (*) 0 - PCM 16        3 - PCM 16 (big endian)\n"
+"\n"
+"      Examples:\n"
+"          -spk:5.1\n"
+"          Instructs valdec to output 5.1 channels\n"
+"\n"
+"          -spk:5.1 -spk:bc\n"
+"          Add back center to 5.1 layout.\n"
+"\n"
+"          -spk:l -spk:r -spk:lfe\n"
+"          2.1 layout constructed from individual channels\n"
+"\n"
+"    -fmt:{format} - set output sample format:\n"
+"      List of supported sample formats:\n"
+"      (*) pcm16             pcm16be\n"
+"          pcm24             pcm24be\n"
+"          pcm32             pcm32be\n"
+"          pcm_float         pcm_double\n"
+"      List of sample formats for backwards compatibility:\n"
+"          0 - PCM 16        3 - PCM 16 (big endian)\n"
 "          1 - PCM 24        4 - PCM 24 (big endian)\n" 
 "          2 - PCM 32        5 - PCM 32 (big endian)\n"
-"          6 - PCM Float     7 - PCM Double\n" 
+"          6 - PCM Float     7 - PCM Double\n"
+"\n"
+"    -rate:N - set output sample rate.\n"
+"      If set, valdec will do sample rate conversion to the rate specified\n"
+"      (if nessesary).\n"
 "  \n"
 "  format selection:\n"
 "    -ac3 - force ac3 (do not autodetect format)\n"
@@ -117,7 +175,6 @@ int main(int argc, char *argv[])
 "  \n"
 "  info:\n"
 "    -i    - print bitstream info\n"
-//"  -opt  - print decoding options\n"
 "    -hist - print levels histogram\n"
 "  \n"
 "  mixer options:\n"
@@ -148,12 +205,12 @@ int main(int argc, char *argv[])
 "    -delay_{ch}:N - delay for channel {ch} (in samples by default)\n" 
 "  \n"
 "  Channel names used at some parameters:\n"
-"  l  - front left       bl - back left\n"
-"  c  - front center     bc - back center\n"
-"  r  - front right      sr - back right\n"
-"  sl - surround left    cl - center left\n"
-"  sr - surround right   cr - center right\n"
-"  lfe - lfe or subwoofer\n"
+"    l  - front left       bl - back left\n"
+"    c  - front center     bc - back center\n"
+"    r  - front right      sr - back right\n"
+"    sl - surround left    cl - left of center\n"
+"    sr - surround right   cr - right of center\n"
+"    lfe - lfe or subwoofer\n"
            );
     return 1;
   }
@@ -172,10 +229,8 @@ int main(int argc, char *argv[])
   /////////////////////////////////////////////////////////
   // Parsers
 
-  const HeaderParser *parser_list[] = { &spdif_header, &ac3_header, &dts_header, &mpa_header };
-  MultiHeader multi_parser(parser_list, array_size(parser_list));
-
-  const HeaderParser *parser = 0;
+  UniFrameParser uni;
+  FrameParser *parser = 0;
 
   /////////////////////////////////////////////////////////
   // Arrays
@@ -197,8 +252,9 @@ int main(int argc, char *argv[])
   /////////////////////////////////////////////////////////
   // Output format
 
-  int iformat = 0;
-  int imask = 0;
+  int format = FORMAT_PCM16;
+  int mask = 0;
+  int sample_rate = 0;
 
   /////////////////////////////////////////////////////////
   // Sinks
@@ -239,7 +295,7 @@ int main(int argc, char *argv[])
         return 1;
       }
 
-      parser = &ac3_header;
+      parser = &uni.ac3;
       continue;
     }
 
@@ -252,7 +308,7 @@ int main(int argc, char *argv[])
         return 1;
       }
 
-      parser = &dts_header;
+      parser = &uni.dts;
       continue;
     }
 
@@ -265,7 +321,7 @@ int main(int argc, char *argv[])
         return 1;
       }
 
-      parser = &mpa_header;
+      parser = &uni.mpa;
       continue;
     }
 
@@ -273,38 +329,36 @@ int main(int argc, char *argv[])
     // Output format
     ///////////////////////////////////////////////////////
 
-    // -spdif - enable SPDIF output
-//    if (is_arg(argv[iarg], "spdif", argt_exist))
-//    {
-//      spdif = true;
-//      continue;
-//    }
-
     // -spk - number of speakers
-    if (is_arg(argv[iarg], "spk", argt_num))
+    if (is_arg(argv[iarg], "spk", argt_enum))
     {
-      imask = int(arg_num(argv[iarg]));
-
-      if (imask < 0 || imask > array_size(mask_tbl))
+      int new_mask;
+      if (!arg_enum(argv[iarg], new_mask, mask_tbl, array_size(mask_tbl)))
       {
-        printf("-spk : incorrect speaker configuration\n");
+        printf("-spk : unknown channel layout: %s\n", arg_text(argv[iarg]));
         return 1;
       }
+      mask |= new_mask;
       continue;
     }
 
     // -fmt - sample format
     if (is_arg(argv[iarg], "fmt", argt_num))
     {
-      iformat = int(arg_num(argv[iarg]));
-      if (iformat < 0 || iformat > array_size(format_tbl))
+      if (!arg_enum(argv[iarg], format, format_tbl, array_size(format_tbl)))
       {
-        printf("-fmt : incorrect sample format");
+        printf("-fmt : unknown sample format: %s\n", arg_text(argv[iarg]));
         return 1;
       }
       continue;
     }
 
+    // -rate - sample rate
+    if (is_arg(argv[iarg], "rate", argt_num))
+    {
+      sample_rate = (int)arg_num(argv[iarg]);
+      continue;
+    }
     ///////////////////////////////////////////////////////
     // Sinks
     ///////////////////////////////////////////////////////
@@ -608,27 +662,17 @@ int main(int argc, char *argv[])
   /////////////////////////////////////////////////////////
 
   if (!parser)
-    parser = &multi_parser;
+    parser = &uni;
 
   if (!file.open(input_filename, parser, 1000000))
   {
     printf("Error: Cannot open file '%s'\n", input_filename);
     return 1;
   }
-    
-  if (!file.stats())
+
+  if (!file.stats() || !file.probe())
   {
     printf("Error: Cannot detect input file format\n", input_filename);
-    return 1;
-  }
-
-  while (!file.eof())
-    if (file.load_frame())
-      break;
-
-  if (!file.is_frame_loaded())
-  {
-    printf("Error: Cannot load the first frame\n");
     return 1;
   }
 
@@ -638,11 +682,8 @@ int main(int argc, char *argv[])
 
   if (print_info)
   {
-    char info[1024];
-    file.file_info(info, sizeof(info));
-    printf("%s\n", info);
-    file.stream_info(info, sizeof(info));
-    printf("%s", info);
+    printf("%s\n", file.file_info().c_str());
+    printf("%s", file.stream_info().c_str());
   }
 
   if (mode == mode_nothing)
@@ -660,19 +701,17 @@ int main(int argc, char *argv[])
   if (!dvd_graph.proc.get_auto_matrix())
     dvd_graph.proc.set_matrix(m);
   
-  Speakers user_spk(format_tbl[iformat], mask_tbl[imask], 0);
+  Speakers user_spk(format, mask, sample_rate);
   if (!dvd_graph.set_user(user_spk))
   {
-    printf("Error: unsupported user format (%s %s %i)\n", 
-      user_spk.format_text(), user_spk.mode_text(), user_spk.sample_rate);
+    printf("Error: unsupported user format %s\n", user_spk.print());
     return 1;
   }
 
-  Speakers in_spk = file.get_spk();
-  if (!dvd_graph.set_input(in_spk))
+  Speakers in_spk = file.get_output();
+  if (!dvd_graph.open(in_spk))
   {
-    printf("Error: unsupported input format (%s %s %i)\n", 
-      in_spk.format_text(), in_spk.mode_text(), in_spk.sample_rate);
+    printf("Error: unsupported file format %s\n", in_spk.print());
     return 1;
   }
 
@@ -704,7 +743,7 @@ int main(int argc, char *argv[])
   switch (mode)
   {
     case mode_raw:
-      if (!out_filename || !raw.open(out_filename))
+      if (!out_filename || !raw.open_file(out_filename))
       {
         printf("Error: failed to open output file '%s'\n", out_filename);
         return 1;
@@ -712,7 +751,7 @@ int main(int argc, char *argv[])
       break;
 
     case mode_wav:
-      if (!out_filename || !wav.open(out_filename))
+      if (!out_filename || !wav.open_file(out_filename))
       {
         printf("Error: failed to open output file '%s'\n", out_filename);
         return 1;
@@ -734,7 +773,7 @@ int main(int argc, char *argv[])
   // Process
   /////////////////////////////////////////////////////////
 
-  Chunk chunk;
+  Chunk chunk, out_chunk;
 
   CPUMeter cpu_current;
   CPUMeter cpu_total;
@@ -745,7 +784,7 @@ int main(int argc, char *argv[])
   double time = 0;
   double old_time = 0;
 
-  sample_t levels[NCHANNELS];
+  sample_t levels[CH_NAMES];
   sample_t level = 0;
 
   int streams = 0;
@@ -760,13 +799,13 @@ int main(int argc, char *argv[])
     {                                                                                                          \
       dvd_graph.proc.get_output_levels(control->get_playback_time(), levels);                                  \
       level = levels[0];                                                                                       \
-      for (i = 1; i < NCHANNELS; i++)                                                                          \
+      for (i = 1; i < CH_NAMES; i++)                                                                           \
         if (levels[i] > level)                                                                                 \
           level = levels[i];                                                                                   \
     }                                                                                                          \
-    fprintf(stderr, "%4.1f%% Frs: %-6i Err: %-i Time: %3i:%02i.%03i Level: %-4idB FPS: %-4i CPU: %.1f%%  \r",  \
+    fprintf(stderr, "%4.1f%% Frames: %-6i Time: %3i:%02i.%03i Level: %-4idB FPS: %-4i CPU: %.1f%%  \r",        \
       file.get_pos(file.relative) * 100,                                                                       \
-      file.get_frames(), dvd_graph.dec.get_errors(),                                                           \
+      file.get_frames(),                                                                                       \
       int(time/60), int(time) % 60, int(time * 1000) % 1000,                                                   \
       int(value2db(level)),                                                                                    \
       int(file.get_frames() / time),                                                                           \
@@ -776,87 +815,42 @@ int main(int argc, char *argv[])
   #define DROP_STAT \
     fprintf(stderr, "                                                                             \r");
 
-  /////////////////////////////////////////////////////
-  // Now we already have a frame loaded
-  // To avoid resyncing again we will use this frame...
-
-  while (!file.eof())
+  while (file.get_chunk(chunk))
   {
-    if (file.is_frame_loaded())
+    /////////////////////////////////////////////////////
+    // Switch to a new stream
+
+    if (file.new_stream())
     {
-      /////////////////////////////////////////////////////
-      // Switch to a new stream
+      if (streams > 0)
+        PRINT_STAT;
 
-      if (file.is_new_stream())
-      {
-        if (streams > 0)
-          PRINT_STAT;
+      if (streams > 0 && print_info)
+        printf("\n\n%s", file.stream_info().c_str());
 
-        if (streams > 0 && print_info)
-        {
-          char info[1024];
-          file.stream_info(info, sizeof(info));
-          printf("\n\n%s", info);
-        }
-
-        streams++;
-        if (mode == mode_nothing)
-          return 0;
-      }
-
-      /////////////////////////////////////////////////////
-      // Process data
-
-      chunk.set_rawdata(file.get_spk(), file.get_frame(), file.get_frame_size());
-      if (!dvd_graph.process(&chunk))
-      {
-        printf("\nError in dvd_graph.process()\n");
-        return 1;
-      }
-
-      while (!dvd_graph.is_empty())
-      {
-        if (!dvd_graph.get_chunk(&chunk))
-        {
-          printf("\nError in dvd_graph.get_chunk()\n");
-          return 1;
-        }
-
-        /////////////////////////////////////////////////////
-        // Do audio output
-
-        if (!chunk.is_dummy())
-        {
-          if (chunk.spk != sink->get_input())
-          {
-            if (sink->query_input(chunk.spk))
-            {
-              DROP_STAT;
-              printf("Opening audio output %s %s %i...\n",
-                chunk.spk.format_text(), chunk.spk.mode_text(), chunk.spk.sample_rate);
-            }
-            else
-            {
-              printf("\nOutput format %s %s %i is unsupported\n",
-                chunk.spk.format_text(), chunk.spk.mode_text(), chunk.spk.sample_rate);
-              return 1;
-            }
-          }
-
-          if (!sink->process(&chunk))
-          {
-            printf("\nError in sink->process()\n");
-            return 1;
-          }
-        }
-      } // while (!dvd_graph.is_empty())
-
+      streams++;
+      if (mode == mode_nothing)
+        return 0;
     }
 
-    /////////////////////////////////////////////////////
-    // Load next frame
-
-    file.load_frame();
+    while (dvd_graph.process(chunk, out_chunk))
+    {
+      if (dvd_graph.new_stream())
+      {
+        Speakers new_spk = dvd_graph.get_output();
+        if (sink->open(new_spk))
+        {
+          DROP_STAT;
+          printf("Opening audio output %s...\n", new_spk.print().c_str());
+        }
+        else
+        {
+          printf("\nOutput format %s is unsupported\n", new_spk.print().c_str());
+          return 1;
+        }
+      }
+      sink->process(out_chunk);
+    }
 
     /////////////////////////////////////////////////////
     // Statistics
@@ -868,19 +862,28 @@ int main(int argc, char *argv[])
       PRINT_STAT;
     }
 
-  } // while (!file.eof()) 
-
-  /////////////////////////////////////////////////////
-  // Flushing
-
-  chunk.set_empty(dvd_graph.get_input());
-  chunk.eos = true;
-
-  if (!dvd_graph.process_to(&chunk, sink))
-  {
-    printf("\nProcessing error!\n");
-    return 1;
   }
+
+  while (dvd_graph.flush(out_chunk))
+  {
+    if (dvd_graph.new_stream())
+    {
+      Speakers new_spk = dvd_graph.get_output();
+      if (sink->open(new_spk))
+      {
+        DROP_STAT;
+        printf("Opening audio output %s...\n", new_spk.print().c_str());
+      }
+      else
+      {
+        printf("\nOutput format %s is unsupported\n", new_spk.print().c_str());
+        return 1;
+      }
+    }
+    sink->process(out_chunk);
+  }
+
+  sink->flush();
 
   /////////////////////////////////////////////////////
   // Stop
@@ -895,7 +898,7 @@ int main(int argc, char *argv[])
   printf("\n---------------------------------------\n");
   if (streams > 1)
     printf("Streams found: %i\n", streams);
-  printf("Frames/errors: %i/%i\n", file.get_frames(), dvd_graph.dec.get_errors());
+  printf("Frames: %i\n", file.get_frames());
   printf("System time: %ims\n", int(cpu_total.get_system_time() * 1000));
   printf("Process time: %ims\n", int(cpu_total.get_thread_time() * 1000 ));
   printf("Approx. %.2f%% realtime CPU usage\n", double(cpu_total.get_thread_time() * 100) / file.get_size(file.time));
@@ -932,5 +935,19 @@ int main(int argc, char *argv[])
     printf("------------------------------------------------------------------------------\n");
   }
 
+  return 0;
+}
+
+int main(int argc, char *argv[])
+{
+  try
+  {
+    return valdec(argc, argv);
+  }
+  catch (ValibException &e)
+  {
+    printf("Processing error: %s\n", boost::diagnostic_information(e).c_str());
+    return -1;
+  }
   return 0;
 }
