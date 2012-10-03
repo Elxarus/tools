@@ -1,3 +1,5 @@
+import glob
+
 def make_usage_header(txt_filename):
   h_filename = txt_filename + '.h'
   out = open(h_filename, 'w')
@@ -6,4 +8,6 @@ def make_usage_header(txt_filename):
     out.write('"'+line.rstrip('\n')+'\\n"\n')
   out.write(';\n');
 
-make_usage_header("wavconv_usage.txt")
+if __name__ == '__main__':
+  for f in glob.glob('*_usage.txt'):
+    make_usage_header(f)

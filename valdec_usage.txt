@@ -1,0 +1,112 @@
+Valib decoder
+=============
+Audio decoder/processor/player utility.
+
+This utility is a part of AC3Filter project (http://ac3filter.net)
+Copyright (c) 2006-2012 by Alexander Vigovsky
+
+Usage:
+  valdec some_file [options]
+
+Options:
+  (*)  - default value
+  {ch} - channel name (l, c, r, sl, sr)
+
+  output mode:
+    -d[ecode]  - just decode (used for testing and performance measurements)
+    -p[lay]    - play file (*)
+    -r[aw] file.raw - decode to RAW file
+    -w[av] file.wav - decode to WAV file
+    -n[othing] - do nothing (to be used with -i option)
+  
+  output options:
+    -spk:{layout} - :
+      Defines output channel layout. You may choose a predefined layout and/or
+      specify each channel individually with several -spk options. When layout
+      is not set, output layout will match the input layout.
+
+      Predefined channel layouts:
+          mono    c
+          stereo  l, c
+          quadro  l, r, sl, sr
+          2.1     c, lfe
+          4.1     l, r, sl, sr, lfe
+          5.1     l, c, r, sl, sr, lfe
+          6.1     l, c, r, sl, sr, bc, lfe
+          7.1     l, c, r, sl, sr, bl, br, lfe
+
+      Predefined channel layouts for backwards compatibility:
+          0 - not set       4 - 2/2 (quadro)
+          1 - 1/0 (mono)    5 - 3/2 (5 ch)
+          2 - 2/0 (stereo)  6 - 3/2+SW (5.1)
+          3 - 3/0 (surround)
+
+      Examples:
+          -spk:5.1
+          Instructs valdec to output 5.1 channels
+
+          -spk:5.1 -spk:bc
+          Add back center to 5.1 layout.
+
+          -spk:l -spk:r -spk:lfe
+          2.1 layout constructed from individual channels
+
+    -fmt:{format} - set output sample format:
+      List of supported sample formats:
+      (*) pcm16             pcm16be
+          pcm24             pcm24be
+          pcm32             pcm32be
+          pcm_float         pcm_double
+      List of sample formats for backwards compatibility:
+          0 - PCM 16        3 - PCM 16 (big endian)
+          1 - PCM 24        4 - PCM 24 (big endian) 
+          2 - PCM 32        5 - PCM 32 (big endian)
+          6 - PCM Float     7 - PCM Double
+
+    -rate:N - set output sample rate.
+      If set, valdec will do sample rate conversion to the rate specified
+      (if nessesary).
+  
+  format selection:
+    -ac3 - force ac3 (do not autodetect format)
+    -dts - force dts (do not autodetect format)
+    -mpa - force mpa (do not autodetect format)
+  
+  info:
+    -i    - print bitstream info
+    -hist - print levels histogram
+  
+  mixer options:
+    -auto_matrix[+|-] - automatic matrix calculation on(*)/off
+    -normalize_matrix[+|-] - normalize matrix on(*)/off
+    -voice_control[+|-] - voice control on(*)/off
+    -expand_stereo[+|-] - expand stereo on(*)/off
+    -clev:N - center mix level (dB)
+    -slev:N - surround mix level (dB)
+    -lfelev:N - lfe mix level (dB)
+    -gain:N - master gain (dB)
+    -gain_{ch}:N - output channel gain (dB)
+    -{in}_{out}:N - factor (not dB!) for a matrix cell at input channel {in}
+          and output channels {out}. Effective only when auto_matrix is off.
+  
+  automatic gain control options:
+    -agc[+|-] - auto gain control on(*)/off
+    -normalize[+|-] - one-pass normalize on/off(*)
+    -drc[+|-] - dynamic range compression on/off(*)
+    -drc_power:N - dynamic range compression level (dB)
+    -attack:N - attack speed (dB/s)
+    -release:N - release speed (dB/s)
+  
+  delay options:
+    -delay_units:n - units in wich delay values are given
+          0 - samples (*) 2 - meters      4 - feet   
+          1 - ms          3 - cm          5 - inches 
+    -delay_{ch}:N - delay for channel {ch} (in samples by default) 
+  
+  Channel names used at some parameters:
+    l  - front left       bl - back left
+    c  - front center     bc - back center
+    r  - front right      sr - back right
+    sl - surround left    cl - left of center
+    sr - surround right   cr - right of center
+    lfe - lfe or subwoofer
