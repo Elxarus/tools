@@ -1,47 +1,24 @@
 #include "source/wav_source.h"
 #include "sink/sink_wav.h"
-#include "filter_graph.h"
+#include "filters/filter_graph.h"
 #include "filters/agc.h"
 #include "filters/convert.h"
 #include "filters/dither.h"
 #include "filters/equalizer.h"
 #include "vtime.h"
 #include "vargs.h"
+#include "equalizer_usage.txt.h"
 
 const int block_size = 65536;
 const int max_bands = 100;
 
-int main(int argc, char **argv)
+int equalizer_proc(int argc, const char **argv)
 {
   int i;
 
   if (argc < 3)
   {
-    printf(
-
-"Equalizer\n"
-"======\n"
-"Simple graphic equalizer\n"
-"This utility is a part of AC3Filter project (http://ac3filter.net)\n"
-"Copyright (c) 2008-2011 by Alexander Vigovsky\n"
-"\n"
-"Usage:\n"
-"  > equalizer input.wav output.wav [-fx:n] [-gx:n]\n"
-"\n"
-"Options:\n"
-"  input.wav  - file to process\n"
-"  output.wav - file to write the result to\n"
-"  -fx - center frequency in Hz for band x (100 bands max)\n"
-"  -gx - gain in dB for band x (100 bands max)\n"
-"  -dither - dither the result\n"
-"\n"
-"If gain for a band specified with -fx parameter is not set, 0dB is assumed\n"
-"\n"
-"Example:\n"
-" > equalizer a.wav b.wav -f1:100 -g1:-6 -f2:200 -g2:3 -f3:500\n"
-" Attenuate all frequencies below 100Hz by 6dB, gain the band with the center\n"
-" at 200Hz by 3dB, and leave everything after 500Hz unchanged\n"
-    );
+    printf(usage);
     return 0;
   }
 
@@ -137,15 +114,14 @@ int main(int argc, char **argv)
     printf("Error: cannot open file: %s\n", input_filename);
     return -1;
   }
+  Speakers spk = src.get_output();
 
   WAVSink sink(output_filename);
-  if (!sink.is_open())
+  if (!sink.is_file_open() || !sink.open(spk))
   {
-    printf("Error: cannot open file: %s\n", output_filename);
+    printf("Error: cannot open file %s with format %s\n", output_filename, spk.print());
     return -1;
   }
-
-  Speakers spk = src.get_output();
 
   /////////////////////////////////////////////////////////////////////////////
   // Build the chain
@@ -153,7 +129,7 @@ int main(int argc, char **argv)
   Converter iconv(block_size);
   Converter oconv(block_size);
   iconv.set_format(FORMAT_LINEAR);
-  oconv.set_format(src.get_output().format);
+  oconv.set_format(spk.format);
 
   Equalizer eq;
   eq.set_enabled(true);
@@ -163,21 +139,21 @@ int main(int argc, char **argv)
     return -1;
   }
 
-  AGC agc(1024);
+  AGC agc;
   Dither dither;
   FilterChain chain;
 
-  chain.add_back(&iconv, "Input converter");
-  chain.add_back(&eq, "Equalizer");
+  chain.add_back(&iconv);
+  chain.add_back(&eq);
   if (do_dither && !spk.is_floating_point())
   {
-    chain.add_back(&dither, "Dither");
+    chain.add_back(&dither);
     dither.level = 0.5 / spk.level;
   }
-  chain.add_back(&agc, "AGC");
-  chain.add_back(&oconv, "Output converter");
+  chain.add_back(&agc);
+  chain.add_back(&oconv);
 
-  if (!chain.set_input(spk))
+  if (!chain.open(spk))
   {
     printf("Error: cannot start processing\n");
     return -1;
@@ -186,20 +162,17 @@ int main(int argc, char **argv)
   /////////////////////////////////////////////////////////////////////////////
   // Do the job
 
-  Chunk chunk;
   printf("0%%\r");
 
+  Chunk in_chunk, out_chunk;
   vtime_t t = local_time() + 0.1;
-  while (!src.is_empty())
+  while (src.get_chunk(in_chunk))
   {
-    src.get_chunk(&chunk);
-    if (!chain.process_to(&chunk, &sink))
-    {
-      char buf[1024];
-      chain.chain_text(buf, array_size(buf));
-      printf("Processing error. Chain dump: %s\n", buf);
-      return -1;
-    }
+    while (chain.process(in_chunk, out_chunk))
+      sink.process(out_chunk);
+
+    ///////////////////////////////////////////////////////
+    // Statistics
 
     if (local_time() > t)
     {
@@ -208,6 +181,24 @@ int main(int argc, char **argv)
       printf("%i%%\r", (int)pos);
     }
   }
+
+  while (chain.flush(out_chunk))
+    sink.process(out_chunk);
+
   printf("100%%\n");
+  return 0;
+}
+
+int main(int argc, const char *argv[])
+{
+  try
+  {
+    return equalizer_proc(argc, argv);
+  }
+  catch (ValibException &e)
+  {
+    printf("Processing error: %s\n", boost::diagnostic_information(e).c_str());
+    return -1;
+  }
   return 0;
 }

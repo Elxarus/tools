@@ -1,0 +1,22 @@
+Equalizer
+======
+Simple graphic equalizer
+This utility is a part of AC3Filter project (http://ac3filter.net)
+Copyright (c) 2008-2011 by Alexander Vigovsky
+
+Usage:
+  > equalizer input.wav output.wav [-fx:n] [-gx:n]
+
+Options:
+  input.wav  - file to process
+  output.wav - file to write the result to
+  -fx - center frequency in Hz for band x (100 bands max)
+  -gx - gain in dB for band x (100 bands max)
+  -dither - dither the result
+
+If gain for a band specified with -fx parameter is not set, 0dB is assumed
+
+Example:
+ > equalizer a.wav b.wav -f1:100 -g1:-6 -f2:200 -g2:3 -f3:500
+ Attenuate all frequencies below 100Hz by 6dB, gain the band with the center
+ at 200Hz by 3dB, and leave everything after 500Hz unchanged

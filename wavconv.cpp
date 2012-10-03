@@ -198,6 +198,8 @@ int main(int argc, const char **argv)
     return -1;
   }
 
+  printf("0%%\r");
+
   Chunk in_chunk, out_chunk;
   vtime_t t = local_time() + 0.1;
   while (source.get_chunk(in_chunk))
