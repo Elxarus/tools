@@ -5,6 +5,7 @@
 #include "mpeg_demux.h"
 #include "vargs.h"
 #include "vtime.h"
+#include "mpeg_demux_usage.txt.h"
 
 const int buf_size = 65536;
 
@@ -189,35 +190,21 @@ void demux(FILE *f, FILE *out, int stream, int substream, bool pes)
 // Main
 ///////////////////////////////////////////////////////////////////////////////
 
-int main(int argc, char **argv)
+int main(int argc, const char **argv)
 {
   int stream = 0;
   int substream = 0;
 
-  char *filename = 0;
-  char *filename_out = 0;
+  const char *filename = 0;
+  const char *filename_out = 0;
 
   FILE *f = 0;
   FILE *out = 0;
 
-  printf("MPEG Program Stream demuxer\n"
-         "This utility is a part of AC3Filter project (http://ac3filter.net)\n"
-         "Copyright (c) 2007-2011 by Alexander Vigovsky\n\n");
   if (argc < 2)
   {
-    printf("Usage:\n"
-           "  mpeg_demux file.mpg [-i] [-d | -p output_file [-s=x | -ss=x]]\n"
-           "  -i - file info (default)\n"
-           "  -d - demux to elementary stream\n"
-           "  -p - demux to pes stream\n"
-           "  -s=xx  - demux stream xx (hex)\n"
-           "  -ss=xx - demux substream xx (hex)\n"
-           "\n"
-           "Note: if stream/substream is not specified, demuxer will dump contents of all\n"
-           "packets found. This mode is useful to demux PES streams (not multiplexed) even\n"
-           "with format changes.\n"
-           );
-    exit(0);
+    printf(usage);
+    return -1;
   }
 
   int  iarg = 0;

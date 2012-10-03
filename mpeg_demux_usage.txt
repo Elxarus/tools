@@ -1,0 +1,15 @@
+MPEG Program Stream demuxer
+This utility is a part of AC3Filter project (http://ac3filter.net)
+Copyright (c) 2007-2011 by Alexander Vigovsky);
+
+Usage:
+  mpeg_demux file.mpg [-i] [-d | -p output_file [-s=x | -ss=x]]
+  -i - file info (default)
+  -d - demux to elementary stream
+  -p - demux to pes stream
+  -s=xx  - demux stream xx (hex)
+  -ss=xx - demux substream xx (hex)
+
+Note: if stream/substream is not specified, demuxer will dump contents of all
+packets found. This mode is useful to demux PES streams (not multiplexed) even
+with format changes.

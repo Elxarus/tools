@@ -1,0 +1,33 @@
+Noise generator
+This utility is part of AC3Filter project (http://ac3filter.net)
+Copyright (c) 2007-2012 by Alexander Vigovsky
+
+Usage:
+  nosie ms [options]
+
+Options:
+  ms - length in milliseconds
+
+  output mode:
+    -p[lay] - playback (*)
+    -w[av] file.wav - write output to a WAV file
+    -r[aw] file.raw - write output to a RAW file
+
+  format:
+    -spk:n - set number of output channels:
+        1 - 1/0 (mono)     4 - 2/2 (quadro) 
+    (*) 2 - 2/0 (stereo)   5 - 3/2 (5 ch)
+        3 - 3/0 (surround) 6 - 3/2+SW (5.1)
+    -fmt:n - set sample format:
+    (*) 0 - PCM 16         3 - PCM 16 (big endian)
+        1 - PCM 24         4 - PCM 24 (big endian)
+        2 - PCM 32         5 - PCM 32 (big endian)
+                 6 - PCM Float
+                 7 - PCM Double
+  -rate:n - sample rate (default is 48000)
+
+  -seed:n - seed for the random numbers generator
+
+Example:
+  > noise 1000 -w noise.wav -fmt:2 -seed:666 -gain:-6
+  Make 1sec stereo PCM Float noise file with level -6db
