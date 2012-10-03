@@ -9,6 +9,7 @@
 #include "filters/gain.h"
 #include "vtime.h"
 #include "vargs.h"
+#include "wavdiff_usage.txt.h"
 
 const int block_size = 65536;
 
@@ -16,36 +17,8 @@ int wavdiff(int argc, const char **argv)
 {
   if (argc < 3)
   {
-    printf(
-
-"WAVDiff\n"
-"=======\n"
-"Find the difference between 2 audio files. Calculates amplitude difference\n"
-"and RMS difference. Can compare files of different types, like PCM16 and\n"
-"PCM Float (number of channels and sample rate must match). Can write\n"
-"the difference into the difference file. May check maximum difference for\n"
-"automated testing\n"
-"\n"
-"This utility is a part of AC3Filter project (http://ac3filter.net)\n"
-"Copyright (c) 2008-2011 by Alexander Vigovsky\n"
-"\n"
-"Usage:\n"
-"  > wavdiff a.wav b.wav [-diff c.wav] [-max_diff:n] [-max_rms:n] [-max_mean:n]\n"
-"\n"
-"Options:\n"
-"  a.wav - First file to compare\n"
-"  b.wav - Second file to compare\n"
-"  c.wav - Difference file\n"
-"  -max_diff - maximum difference between files allowed (dB)\n"
-"  -max_rms  - maximum RMS difference between files allowed (dB)\n"
-"  -max_mean - maximum mean difference between files allowed (dB)\n"
-"\n"
-"Example:\n"
-" > wavdiff a.wav b.wav -diff c.wav -max_rms:-90\n"
-" Comapre a.wav and b.wav and write the difference into c.wav\n"
-" If the difference between files is more than -90dB exit code will be non-zero\n"
-    );
-    return 0;
+    printf(usage);
+    return -1;
   }
 
   const char *filename1 = argv[1];
