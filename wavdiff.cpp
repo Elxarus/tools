@@ -1,7 +1,9 @@
 #include <math.h>
 #include "source/wav_source.h"
+#include "source/source_filter.h"
 #include "sink/sink_wav.h"
-#include "filter_graph.h"
+#include "sink/sink_filter.h"
+#include "filters/filter_graph.h"
 #include "filters/agc.h"
 #include "filters/convert.h"
 #include "filters/gain.h"
@@ -10,7 +12,7 @@
 
 const int block_size = 65536;
 
-int main(int argc, char **argv)
+int wavdiff(int argc, const char **argv)
 {
   if (argc < 3)
   {
@@ -120,7 +122,7 @@ int main(int argc, char **argv)
   WAVSink f_diff;
   if (diff_filename)
   {
-    if (!f_diff.open(diff_filename))
+    if (!f_diff.open_file(diff_filename))
     {
       printf("Error: cannot open file: %s\n", diff_filename);
       return -1;
@@ -140,16 +142,6 @@ int main(int argc, char **argv)
     spk_diff = spk1;
   else if (spk1.format == FORMAT_PCM32)
     spk_diff = spk2;
-  
-  /////////////////////////////////////////////////////////////////////////////
-  // Build the chain
-
-  Converter conv1(block_size);
-  Converter conv2(block_size);
-  Converter conv_diff(block_size);
-  conv1.set_format(FORMAT_LINEAR);
-  conv2.set_format(FORMAT_LINEAR);
-  conv_diff.set_format(spk_diff.format);
 
   if (spk1.nch() != spk2.nch())
   {
@@ -161,20 +153,36 @@ int main(int argc, char **argv)
     printf("Error: different sample rates\n");
     return -1;
   }
-  if (!conv1.set_input(spk1))
-  {
-    printf("Error: unsupported file type: %s\n", filename1);
-    return -1;
-  }
-  if (!conv2.set_input(spk2))
-  {
-    printf("Error: unsupported file type: %s\n", filename2);
-    return -1;
-  }
+
+  /////////////////////////////////////////////////////////////////////////////
+  // Build the chain
+
+  Converter conv1(block_size);
+  Converter conv2(block_size);
+  Converter conv_diff(block_size);
+  conv1.set_format(FORMAT_LINEAR);
+  conv2.set_format(FORMAT_LINEAR);
+  conv_diff.set_format(spk_diff.format);
 
   SourceFilter src1(&f1, &conv1);
   SourceFilter src2(&f2, &conv2);
   SinkFilter sink_diff(&f_diff, &conv_diff);
+
+  if (!conv1.open(spk1))
+  {
+    printf("Error: unsupported file type: %s\n", filename1);
+    return -1;
+  }
+  if (!conv2.open(spk2))
+  {
+    printf("Error: unsupported file type: %s\n", filename2);
+    return -1;
+  }
+  if (diff_filename && !sink_diff.open(src1.get_output()))
+  {
+    printf("Cannot open output file %s with type %s\n", diff_filename, spk_diff.print().c_str());
+    return -1;
+  }
 
   /////////////////////////////////////////////////////////////////////////////
   // Do the job
@@ -197,26 +205,12 @@ int main(int argc, char **argv)
   while (1)
   {
     if (!chunk1.size)
-    {
-      if (src1.is_empty()) break;
-      if (!src1.get_chunk(&chunk1))
-      {
-        printf("src1.get_chunk() fails");
-        return -1;
-      }
-      if (chunk1.is_dummy()) continue;
-    }
+      if (!src1.get_chunk(chunk1))
+        break;
 
     if (!chunk2.size)
-    {
-      if (src2.is_empty()) break;
-      if (!src2.get_chunk(&chunk2))
-      {
-        printf("src1.get_chunk() fails");
-        return -1;
-      }
-      if (chunk2.is_dummy()) continue;
-    }
+      if (!src2.get_chunk(chunk2))
+        break;
 
     ///////////////////////////////////////////////////////
     // Compare data
@@ -247,17 +241,13 @@ int main(int argc, char **argv)
         for (s = 0; s < len; s++)
           chunk1.samples[ch][s] = chunk1.samples[ch][s] * norm1 - chunk2.samples[ch][s] * norm2;
 
-      chunk_diff.set_linear(spk_diff_linear, chunk1.samples, len);
-      if (!sink_diff.process(&chunk_diff))
-      {
-        printf("Error: cannot write to the difference file\n");
-        return -1;
-      }
+      chunk_diff.set_linear(chunk1.samples, len);
+      sink_diff.process(chunk_diff);
     }
 
     n += len;
-    chunk1.drop(len);
-    chunk2.drop(len);
+    chunk1.drop_samples(len);
+    chunk2.drop_samples(len);
 
     ///////////////////////////////////////////////////////
     // Statistics
@@ -272,15 +262,7 @@ int main(int argc, char **argv)
   } // while (1)
 
   if (f_diff.is_open())
-  {
-    chunk_diff.set_empty(spk_diff);
-    chunk_diff.set_eos();
-    if (!sink_diff.process(&chunk_diff))
-    {
-      printf("Error: cannot write to the difference file\n");
-      return -1;
-    }
-  }
+    f_diff.flush();
 
   rms = sqrt(rms/n);
   mean /= n;
@@ -308,4 +290,18 @@ int main(int argc, char **argv)
   }
 
   return result;
+}
+
+int main(int argc, const char *argv[])
+{
+  try
+  {
+    return wavdiff(argc, argv);
+  }
+  catch (ValibException &e)
+  {
+    printf("Processing error: %s\n", boost::diagnostic_information(e).c_str());
+    return -1;
+  }
+  return 0;
 }
