@@ -1,0 +1,72 @@
+WavConv
+=======
+Wave format conversion tool. Does sample rate conversion, may change sample
+type and cut a part of a wave.
+
+This utility is a part of AC3Filter project (http://ac3filter.net)
+Copyright (c) 2008-2012 by Alexander Vigovsky
+
+Usage:
+  > wavconv input.wav output.wav [options]
+
+Options:
+  input.wav  - input file
+  output.wav - file to write the result to
+
+  Sample rate conversion:
+    -r[ate]:N
+      New sample rate (deafult: do not change).
+
+    -q[uality]:N
+      Passband width (default: 0.99).
+
+    -a[ttenuation]:N
+      Stopband attenuation in dB (default: 100).
+
+  Format conversion:
+    -f[ormat]
+      Change the sample format. Supported sample types:
+      pcm16, pcm24, pcm32, pcm_float, pcm_double
+
+  Cutting:
+    -cut_start:N
+      Time in seconds of the starting point. Start of the file by default.
+
+    -cut_end:N
+      Time in seconds of the ending point. End of the file by default.
+
+  -g[ain]
+    Gain to apply to the result
+
+Notes:
+  Dithering is applied when sample rate conversion occurs or sample type is
+  converted to an integer type with lower precision (24bit -> 16bit for
+  instance).
+
+  Automatic gain control prevents overflows.
+
+Examples:
+  High-quality resample:
+  > wavconv input.wav output.wav -r:44100 -q:0.999 -a:150
+
+  Passband width in this example is 0.999. This means that only uppper 22Hz
+  of the destination bandwidth (22028Hz - 22050Hz) will be distorted. Note,
+  that attenuation is large here. Such attenuation is only sensible for at
+  least 24bit files.
+
+  Sample type conversion:
+  > wavconv input.wav output.wav -format:pcm_float -gain:-6
+
+  Convert sample format to floating-point and decrease gain by 6dB.
+
+  Cutting:
+  > wavconv input.wav output.wav -cut_start:1.18 -cut_end:5
+
+  Writes a part of the input.wav in between of 1.18sec and 5sec to output.wav.
+
+  All at once:
+  > wavconv in.wav out.wav -cut_start:120 -cut_end:600 -r:44100 -g:3 -f:pcm16
+
+  Cuts a part of the input file in between of 2min and 5min, converts it to
+  PCM16 44100Hz format, gains the result by +3dB, applies dithering and checks
+  for overflows.
