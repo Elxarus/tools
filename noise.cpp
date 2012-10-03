@@ -33,7 +33,7 @@ const int format_tbl[] =
 
 
 
-int main(int argc, char **argv)
+int noise_proc(int argc, const char **argv)
 {
   if (argc < 2)
   {
@@ -266,19 +266,26 @@ int main(int argc, char **argv)
   Chunk chunk;
   uint64_t pos = 0;
 
-  try {
-    while (source->get_chunk(chunk))
-    {
-      sink->process(chunk);
-      pos += chunk.size;
-      fprintf(stderr, "%.0f%%\r", double(pos)*100/out_size);
-    }
+  while (source->get_chunk(chunk))
+  {
+    sink->process(chunk);
+    pos += chunk.size;
+    fprintf(stderr, "%.0f%%\r", double(pos)*100/out_size);
+  }
+
+  return 0;
+}
+
+int main(int argc, const char *argv[])
+{
+  try
+  {
+    return noise_proc(argc, argv);
   }
   catch (ValibException &e)
   {
-    printf("Processing error:\n%s", boost::diagnostic_information(e).c_str());
+    printf("Processing error: %s\n", boost::diagnostic_information(e).c_str());
     return -1;
   }
-
   return 0;
 }
