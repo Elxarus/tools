@@ -7,20 +7,13 @@
 #include "filters/filter_graph.h"
 #include "win32/cpu.h"
 #include "vargs.h"
+#include "ac3enc_usage.txt.h"
 
-int main(int argc, char *argv[])
+int ac3enc(int argc, const char *argv[])
 {
   if (argc < 3)
   {
-    printf(
-"AC3 Encoder\n"
-"===========\n"
-"This utility is a part of AC3Filter project (http://ac3filter.net)\n"
-"Copyright (c) 2007-2011 by Alexander Vigovsky\n"
-"\n"
-"Usage:\n"
-"  ac3enc input.wav output.ac3 [-br:bitrate_kbps]\n"
-    );
+    printf(usage);
     return -1;
   }
 
@@ -165,5 +158,19 @@ int main(int argc, char *argv[])
   printf("System time: %ims\n", int(cpu_total.get_system_time() * 1000));
   printf("Process time: %ims\n", int(cpu_total.get_thread_time() * 1000));
 
+  return 0;
+}
+
+int main(int argc, const char *argv[])
+{
+  try
+  {
+    return ac3enc(argc, argv);
+  }
+  catch (ValibException &e)
+  {
+    printf("Processing error: %s\n", boost::diagnostic_information(e).c_str());
+    return -1;
+  }
   return 0;
 }

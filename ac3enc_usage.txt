@@ -1,0 +1,7 @@
+AC3 Encoder
+===========
+This utility is a part of AC3Filter project (http://ac3filter.net)
+Copyright (c) 2007-2012 by Alexander Vigovsky
+
+Usage:
+  ac3enc input.wav output.ac3 [-br:bitrate_kbps]
