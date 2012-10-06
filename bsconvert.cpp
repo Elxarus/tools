@@ -4,71 +4,28 @@
 #include "parser.h"
 #include "bitstream.h"
 #include "filters/spdifer.h"
-#include "parsers/mpa/mpa_header.h"
-#include "parsers/ac3/ac3_header.h"
-#include "parsers/dts/dts_header.h"
-#include "parsers/spdif/spdif_header.h"
-#include "parsers/multi_header.h"
+#include "parsers/uni/uni_frame_parser.h"
 #include "source/file_parser.h"
 #include "source/source_filter.h"
+#include "bsconvert_usage.txt.h"
 
 inline const char *bs_name(int bs_type);
 inline bool is_14bit(int bs_type)
 { return bs_type == BITSTREAM_14LE || bs_type == BITSTREAM_14BE; }
 
-int main(int argc, char **argv)
+int bsconvert_proc(int argc, const char **argv)
 {
   if (argc < 2)
   {
-    printf(
-"Bitstream converter\n"
-"===================\n"
-"This utility conversts files between numerous MPA/AC3/DTS stream types:\n"
-"SPDIF padded, 8/14/16bit big/low endian. By default, it converts any\n"
-"stream type to the most common byte stream.\n"
-"\n"
-"This utility is a part of AC3Filter project (http://ac3filter.net)\n"
-"Copyright (c) 2007-2011 by Alexander Vigovsky\n"
-"\n"
-"Usage:\n"
-"  Detect file type and print file information:\n"
-"  > bsconvert input_file\n"
-"\n"
-"  Convert a file:\n"
-"  > bsconvert input_file output_file [format]\n"
-"\n"
-"Options:\n"
-"  input_file  - file to convert\n"
-"  output_file - file to write result to\n"
-"  format      - output file format:\n"
-"    8     - byte stream (default)\n"
-"    16le  - 16bit low endian\n"
-"    14be  - 14bit big endian (DTS only)\n"
-"    14le  - 14bit low endian (DTS only)\n"
-"\n"
-"Notes:\n"
-"  File captured from SPDIF input may contain several parts of different type.\n"
-"  For example SPDIF transmission may be started with 5.1 ac3 format then\n"
-"  switch to 5.1 dts and then to stereo ac3. In this case all stream parts\n"
-"  will be converted and writed to the same output file\n"
-"\n"
-"  SPDIF stream is padded with zeros, therefore output file size may be MUCH\n"
-"  smaller than input. It is normal and this does not mean that some data was\n"
-"  lost. This conversion is loseless! You can recreate SPDIF stream back with\n"
-"  'spdifer' utility.\n"
-"\n"
-"  14bit streams are supported only for DTS format. Note, that conversion\n"
-"  between 14bit and non-14bit changes actual frame size (frame interval),\n"
-"  but does not change the frame header.\n"
-    );
+    printf(usage);
     return -1;
   }
 
   /////////////////////////////////////////////////////////
   // Parse command line
 
-  char *in_filename = 0;
-  char *out_filename = 0;
+  const char *in_filename = 0;
+  const char *out_filename = 0;
   int bs_type = BITSTREAM_8;
 
   switch (argc)
@@ -101,18 +58,17 @@ int main(int argc, char **argv)
     break;
 
   default:
-    printf("Error: Wrong number of arguments\n");
+    printf(usage);
     return -1;
   }
 
   /////////////////////////////////////////////////////////
   // Open file and print file info
 
-  const HeaderParser *headers[] = { &ac3_header, &mpa_header, &dts_header, &spdif_header };
-  MultiHeader multi_header(headers, array_size(headers));
+  UniFrameParser uni;
 
   FileParser in_file;
-  if (!in_file.open(in_filename, &multi_header, 1024*1024))
+  if (!in_file.open(in_filename, &uni, 1024*1024))
   {
     printf("Error: Cannot open file '%s'\n", in_filename);
     return -1;
@@ -160,71 +116,64 @@ int main(int argc, char **argv)
   int bs_target = bs_type;
   bs_conv_t conv;
   Chunk chunk;
-  HeaderInfo hdr;
-  Rawdata buf(multi_header.max_frame_size() / 7 * 8 + 8);
-  
-  try {
-    in_file.seek(0); // Force new stream
-    while (source->get_chunk(chunk))
-    {
-      ///////////////////////////////////////////////////////
-      // New stream
+  FrameInfo finfo;
+  Rawdata buf(uni.sync_info().max_frame_size / 7 * 8 + 8);
 
-      if (source->new_stream())
-      {
-        if (frames) printf("\n\n");
-        printf("%s", in_file.stream_info().c_str());
-
-        hdr = (in_file.get_output().format == FORMAT_SPDIF)?
-          despdifer.raw_header_info():
-          hdr = in_file.header_info();
-
-        bs_target = bs_type;
-        if (is_14bit(bs_target) && hdr.spk.format != FORMAT_DTS)
-        {
-          printf(
-            "\nWARNING!!!\n"
-            "%s does not support 14bit stream format!\n"
-            "It will be converted to byte stream.\n", hdr.spk.format_text());
-          bs_target = BITSTREAM_8;
-        }
-
-        printf("Conversion from %s to %s\n", bs_name(hdr.bs_type), bs_name(bs_target));
-        conv = bs_conversion(hdr.bs_type, bs_target);
-        if (!conv)
-          printf("Error: Cannot convert!\n");
-      }
-      frames++;
-
-      ///////////////////////////////////////////////////////
-      // Skip the stream if we cannot convert it
-
-      if (!conv)
-      {
-        fprintf(stderr, "Skipping: %i\r", frames);
-        continue;
-      }
-
-      ///////////////////////////////////////////////////////
-      // Do the job
-
-      uint8_t *new_frame = buf.begin();
-      size_t new_size = conv(chunk.rawdata, chunk.size, new_frame);
-
-      // Correct DTS header
-      if (bs_target == BITSTREAM_14LE)
-        new_frame[3] = 0xe8;
-      else if (bs_target == BITSTREAM_14BE)
-        new_frame[2] = 0xe8;
-
-      out_file.write(new_frame, new_size);
-      fprintf(stderr, "Frame: %i\r", frames);
-    }
-  }
-  catch (ValibException &e)
+  in_file.seek(0); // Force new stream
+  while (source->get_chunk(chunk))
   {
-    printf("Processing error:\n%s", boost::diagnostic_information(e).c_str());
-    return -1;
+    ///////////////////////////////////////////////////////
+    // New stream
+
+    if (source->new_stream())
+    {
+      if (frames) printf("\n\n");
+      printf("%s", in_file.stream_info().c_str());
+
+      finfo = (in_file.get_output().format == FORMAT_SPDIF)?
+        despdifer.raw_frame_info():
+        in_file.frame_info();
+
+      bs_target = bs_type;
+      if (is_14bit(bs_target) && finfo.spk.format != FORMAT_DTS)
+      {
+        printf(
+          "\nWARNING!!!\n"
+          "%s does not support 14bit stream format!\n"
+          "It will be converted to byte stream.\n", finfo.spk.format_text());
+        bs_target = BITSTREAM_8;
+      }
+
+      printf("Conversion from %s to %s\n", bs_name(finfo.bs_type), bs_name(bs_target));
+      conv = bs_conversion(finfo.bs_type, bs_target);
+      if (!conv)
+        printf("Error: Cannot convert!\n");
+    }
+    frames++;
+
+    ///////////////////////////////////////////////////////
+    // Skip the stream if we cannot convert it
+
+    if (!conv)
+    {
+      fprintf(stderr, "Skipping: %i\r", frames);
+      continue;
+    }
+
+    ///////////////////////////////////////////////////////
+    // Do the job
+
+    uint8_t *new_frame = buf.begin();
+    size_t new_size = conv(chunk.rawdata, chunk.size, new_frame);
+
+    // Correct DTS header
+    if (bs_target == BITSTREAM_14LE)
+      new_frame[3] = 0xe8;
+    else if (bs_target == BITSTREAM_14BE)
+      new_frame[2] = 0xe8;
+
+    out_file.write(new_frame, new_size);
+    fprintf(stderr, "Frame: %i\r", frames);
   }
 
   printf("Frames found: %i\n\n", frames);
@@ -244,4 +193,18 @@ inline const char *bs_name(int bs_type)
     case BITSTREAM_14LE: return "14bit low endian";
     default: return "unknown";
   }
+}
+
+int main(int argc, const char *argv[])
+{
+  try
+  {
+    return bsconvert_proc(argc, argv);
+  }
+  catch (ValibException &e)
+  {
+    printf("Processing error: %s\n", boost::diagnostic_information(e).c_str());
+    return -1;
+  }
+  return 0;
 }
