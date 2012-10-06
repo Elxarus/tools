@@ -103,45 +103,37 @@ int ac3enc(int argc, const char *argv[])
   fprintf(stderr, "0.0%% Frs/err: 0/0\tTime: 0:00.000i\tFPS: 0 CPU: 0%%\r"); 
   int frames = 0;
 
-  try
-  {
-    while (src.get_chunk(pcm_chunk))
-      while (chain.process(pcm_chunk, ac3_chunk))
-      {
-        sink.process(ac3_chunk);
-        frames++;
-
-        /////////////////////////////////////////////////////
-        // Statistics
-
-        ms = double(cpu_total.get_system_time() * 1000);
-        if (ms > old_ms + 100)
-        {
-          old_ms = ms;
-
-          // Statistics
-          fprintf(stderr, "%2.1f%% Frames: %i\tTime: %i:%02i.%03i\tFPS: %i CPU: %.1f%%  \r", 
-            double(src.pos()) * 100.0 / src.size(), 
-            frames,
-            int(ms/60000), int(ms) % 60000/1000, int(ms) % 1000,
-            int(frames * 1000 / (ms+1)),
-            cpu_usage.usage() * 100);
-        } // if (ms > old_ms + 100)
-      }
-
-    /////////////////////////////////////////////////////
-    // Flush the chain
-
-    while (chain.flush(ac3_chunk))
+  while (src.get_chunk(pcm_chunk))
+    while (chain.process(pcm_chunk, ac3_chunk))
     {
       sink.process(ac3_chunk);
       frames++;
+
+      /////////////////////////////////////////////////////
+      // Statistics
+
+      ms = double(cpu_total.get_system_time() * 1000);
+      if (ms > old_ms + 100)
+      {
+        old_ms = ms;
+
+        // Statistics
+        fprintf(stderr, "%2.1f%% Frames: %i\tTime: %i:%02i.%03i\tFPS: %i CPU: %.1f%%  \r", 
+          double(src.pos()) * 100.0 / src.size(), 
+          frames,
+          int(ms/60000), int(ms) % 60000/1000, int(ms) % 1000,
+          int(frames * 1000 / (ms+1)),
+          cpu_usage.usage() * 100);
+      } // if (ms > old_ms + 100)
     }
-  }
-  catch (ValibException &e)
+
+  /////////////////////////////////////////////////////
+  // Flush the chain
+
+  while (chain.flush(ac3_chunk))
   {
-    printf("Processing error:\n%s", boost::diagnostic_information(e).c_str());
-    return -1;
+    sink.process(ac3_chunk);
+    frames++;
   }
 
   ms = double(cpu_total.get_system_time() * 1000);
