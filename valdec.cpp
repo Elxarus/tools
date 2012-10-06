@@ -94,7 +94,7 @@ const enum_opt format_tbl[] =
   { "7", FORMAT_PCMDOUBLE },
 };
 
-int valdec(int argc, char *argv[])
+int valdec(int argc, const char *argv[])
 {
   using std::string;
   if (argc < 2)
