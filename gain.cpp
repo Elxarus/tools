@@ -7,33 +7,15 @@
 #include "filters/gain.h"
 #include "vtime.h"
 #include "vargs.h"
+#include "gain_usage.txt.h"
 
 const int block_size = 65536;
 
-int main(int argc, char **argv)
+int gain_proc(int argc, const char **argv)
 {
   if (argc < 3)
   {
-    printf(
-
-"Gain\n"
-"====\n"
-"Simple gain tool to amplify or attenuate an audio file.\n"
-"This utility is a part of AC3Filter project (http://ac3filter.net)\n"
-"Copyright (c) 2008-2011 by Alexander Vigovsky\n"
-"\n"
-"Usage:\n"
-"  > gain input.wav output.wav [-g[ain]:n]\n"
-"\n"
-"Options:\n"
-"  input.wav  - file to process\n"
-"  output.wav - file to write the result to\n"
-"  -gain - gain to apply\n"
-"\n"
-"Example:\n"
-" > gain a.wav b.wav -gain:-10\n"
-" Attenuate by 10dB\n"
-    );
+    printf(usage);
     return 0;
   }
 
@@ -47,7 +29,8 @@ int main(int argc, char **argv)
   for (int iarg = 3; iarg < argc; iarg++)
   {
     // -gain
-    if (is_arg(argv[iarg], "gain", argt_num))
+    if (is_arg(argv[iarg], "g", argt_num) ||
+        is_arg(argv[iarg], "gain", argt_num))
     {
       gain = db2value(arg_num(argv[iarg]));
       continue;
@@ -89,7 +72,7 @@ int main(int argc, char **argv)
   iconv.set_format(FORMAT_LINEAR);
   oconv.set_format(src.get_output().format);
   Gain gain_filter;
-  AGC agc(1024);
+  AGC agc;
 
   gain_filter.gain = gain;
 
@@ -108,32 +91,45 @@ int main(int argc, char **argv)
   /////////////////////////////////////////////////////////////////////////////
   // Do the job
 
+  printf("0%%\r");
+
+  Chunk in_chunk, out_chunk;
+  vtime_t t = local_time() + 0.1;
+  while (src.get_chunk(in_chunk))
+  {
+    while (chain.process(in_chunk, out_chunk))
+      sink.process(out_chunk);
+
+    ///////////////////////////////////////////////////////
+    // Statistics
+
+    if (local_time() > t)
+    {
+      t += 0.1;
+      double pos = double(src.pos()) * 100 / src.size();
+      printf("%i%%\r", (int)pos);
+    }
+  }
+
+  while (chain.flush(out_chunk))
+    sink.process(out_chunk);
+
+  sink.flush();
+
+  printf("100%%\n");
+  return 0;
+}
+
+int main(int argc, const char *argv[])
+{
   try
   {
-    Chunk in_chunk, out_chunk;
-    printf("0%%\r");
-    vtime_t t = local_time() + 0.1;
-    while (src.get_chunk(in_chunk))
-    {
-      while (chain.process(in_chunk, out_chunk))
-        sink.process(out_chunk);
-
-      if (local_time() > t)
-      {
-        t += 0.1;
-        double pos = double(src.pos()) * 100 / src.size();
-        printf("%i%%\r", (int)pos);
-      }
-    }
-    while (chain.flush(out_chunk))
-      sink.process(out_chunk);
-    printf("100%%\n");
+    return gain_proc(argc, argv);
   }
   catch (ValibException &e)
   {
-    printf("Processing error:\n%s", boost::diagnostic_information(e).c_str());
+    printf("Processing error: %s\n", boost::diagnostic_information(e).c_str());
     return -1;
   }
-
   return 0;
 }
