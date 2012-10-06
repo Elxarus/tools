@@ -1,0 +1,36 @@
+Filter
+======
+Simple parametric audio filter
+This utility is a part of AC3Filter project (http://ac3filter.net)
+Copyright (c) 2008-2012 by Alexander Vigovsky
+
+Usage:
+  > filter input.wav output.wav -<type> -f:n [-f2:n] -df:n [-a:n] [-norm]
+
+Options:
+  input.wav  - file to process
+  output.wav - file to write the result to
+  -<type> - filter type:
+    -lowpass  - low pass filter
+    -highpass - high pass filter
+    -bandpass - band pass filter
+    -bandstop - band stop filter
+  -f    - center frequency of the filter (all filters)
+  -f2   - second bound frequency (bandpass and bandstop filters only)
+  -df   - transition band width
+  -a    - attenuation factor in dB (100dB by default)
+  -norm - if this switch is present all frequecies are specified in
+          normalized form instead of Hz.
+  -dither - dither the result
+
+Examples:
+  Band-pass filter from 100Hz to 8kHz with transition width of 100Hz.
+  Attenuate all other frequencies (0-50Hz and 8050 to nyquist) by 100dB.
+  > filter in.wav out.wav -bandpass -f:100 -f2:8000 -df:100 -a:100
+
+  Low-pass half of the total bandwidth with 1%% transition bandwidth.
+  Note, that in normalized form nyquist frequency is 0.5 (not 1.0!), so half
+  of the bandwidth is 0.25 and 1% of the bandwidth is 0.005.
+  For 48kHz input, this means low-pass filter with 12kHz cutoff frequency
+  and 240Hz transition band width.
+  > filter in.wav out.wav -lowpass -f:0.25 -df:0.005
