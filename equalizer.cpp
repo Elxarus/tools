@@ -185,6 +185,8 @@ int equalizer_proc(int argc, const char **argv)
   while (chain.flush(out_chunk))
     sink.process(out_chunk);
 
+  sink.flush();
+
   printf("100%%\n");
   return 0;
 }
