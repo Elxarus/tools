@@ -8,17 +8,19 @@
 #include "parsers/spdif/spdif_header.h"
 #include "parsers/spdif/spdif_wrapper.h"
 #include "parsers/multi_header.h"
-#include "parsers/file_parser.h"
+#include "source/file_parser.h"
 
 #include "sink/sink_raw.h"
 #include "sink/sink_wav.h"
 #include "vtime.h"
 
+#include "spdifer_usage.txt.h"
+
 ///////////////////////////////////////////////////////////////////////////////
 // Main
 ///////////////////////////////////////////////////////////////////////////////
 
-int main(int argc, const char **argv)
+int spdifer_proc(int argc, const char **argv)
 {
   bool stat = true;  // display statistics
 
@@ -30,26 +32,7 @@ int main(int argc, const char **argv)
 
   if (argc < 3)
   {
-    printf(
-
-"Spdifer\n"
-"=======\n"
-"This utility encapsulates AC3/DTS/MPEG Audio stream into SPDIF stream\n"
-"according to IEC 61937\n"
-"\n"
-"This utility is a part of AC3Filter project (http://ac3filter.net)\n"
-"Copyright (c) 2007-2011 by Alexander Vigovsky\n"
-"\n"
-"Usage:\n"
-"  spdifer input_file output_file [-raw | -wav]\n"
-"\n"
-"Options:\n"
-"  input_file  - file to convert\n"
-"  output_file - file to write result to\n"
-"  -raw - make raw SPDIF stream output (default)\n"
-"  -wav - make PCM WAV file with SPDIF data (for writing to CD Audio)\n"
-
-    );
+    printf(usage);
     return 0;
   }
 
@@ -69,10 +52,8 @@ int main(int argc, const char **argv)
   /////////////////////////////////////////////////////////
   // Open files
 
-  const HeaderParser *parser_list[] = { &spdif_header, &ac3_header, &dts_header, &mpa_header };
-  MultiHeader multi_parser(parser_list, array_size(parser_list));
-
-  if (!file.open(input_filename, &multi_parser))
+  SpdifableFrameParser spdifable;
+  if (!file.open(input_filename, &spdifable))
   {
     fprintf(stderr, "Cannot open input file '%s'\n", input_filename);
     return 1;
@@ -81,7 +62,7 @@ int main(int argc, const char **argv)
   switch (mode)
   {
   case mode_wav:
-    if (!wav.open(output_filename))
+    if (!wav.open_file(output_filename))
     {
       fprintf(stderr, "Cannot open output file '%s'\n", output_filename);
       return 1;
@@ -90,7 +71,7 @@ int main(int argc, const char **argv)
     break;
 
   case mode_raw:
-    if (!raw.open(output_filename))
+    if (!raw.open_file(output_filename))
     {
       fprintf(stderr, "Cannot open output file '%s'\n", output_filename);
       return 1;
@@ -115,32 +96,36 @@ int main(int argc, const char **argv)
   vtime_t old_time = time;
   vtime_t start_time = time;
 
-  Chunk chunk;
-  while (!file.eof())
+  Chunk chunk, out_chunk;
+  while (file.get_chunk(chunk))
   {
-    if (file.load_frame())
+    frames++;
+    if (file.new_stream())
     {
-      frames++;
-      if (file.is_new_stream())
-        streams++;
-
-      if (spdifer.parse_frame(file.get_frame(), file.get_frame_size()))
+      Speakers new_spk = file.get_output();
+      printf("Input stream found: %s\n", new_spk.print().c_str());
+      if (!spdifer.open(new_spk))
       {
-        Speakers spk = spdifer.get_spk();
-        if (spk.format == FORMAT_SPDIF)
-        {
-          chunk.set_rawdata(Speakers(FORMAT_PCM16, MODE_STEREO, spk.sample_rate), spdifer.get_rawdata(), spdifer.get_rawsize());
-          if (sink->process(&chunk))
-            size += chunk.size;
-          else
-            errors++;
-        }
-        else
-          skipped++;
+        printf("Error: cannot process this format\n");
+        return -1;
       }
-      else
-        errors++;
-    } // if (file.load_frame())
+      streams++;
+    }
+
+    while (spdifer.process(chunk, out_chunk))
+    {
+      if (spdifer.new_stream())
+      {
+        Speakers new_spk = spdifer.get_output();
+        printf("Opening output stream: %s\n", new_spk.print().c_str());
+        if (!sink->open(new_spk))
+        {
+          printf("Error: cannot open sink\n");
+          return -1;
+        }
+      }
+      sink->process(out_chunk);
+    }
 
     time = local_time();
     if (file.eof() || time > old_time + 0.1)
@@ -156,26 +141,45 @@ int main(int argc, const char **argv)
         int(processed * 100 / file_size),
         eta / 60, eta % 60,
         int(processed / 1000000), int(processed/elapsed/1000000), size / 1000000, frames,
-        file.is_in_sync()? file.get_spk().format_text(): "Unknown");
+        file.get_output().print().c_str());
     }
   } // while (!file.eof())
 
-  // flush output
-  chunk.set_empty(sink->get_input(), false, 0, true);
-  sink->process(&chunk);
-
-  // close file
-  switch (mode)
+  while (spdifer.flush(out_chunk))
   {
-    case mode_wav: wav.close(); break;
-    case mode_raw: raw.close(); break;
+    if (spdifer.new_stream())
+    {
+      Speakers new_spk = spdifer.get_output();
+      printf("Opening output stream: %s\n", new_spk.print().c_str());
+      if (!sink->open(new_spk))
+      {
+        printf("Error: cannot open sink\n");
+        return -1;
+      }
+    }
+    sink->process(out_chunk);
   }
+
+  sink->flush();
+  sink->close();
 
   // Final notes
   printf("\n");
   if (streams > 1) printf("%i streams converted\n", streams);
-  if (skipped)     printf("%i frames skipped\n", skipped);
-  if (errors)      printf("%i frame conversion errors\n", errors);
 
+  return 0;
+}
+
+int main(int argc, const char *argv[])
+{
+  try
+  {
+    return spdifer_proc(argc, argv);
+  }
+  catch (ValibException &e)
+  {
+    printf("Processing error: %s\n", boost::diagnostic_information(e).c_str());
+    return -1;
+  }
   return 0;
 }

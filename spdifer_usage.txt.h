@@ -1,0 +1,18 @@
+const char *usage =
+"Spdifer\n"
+"=======\n"
+"This utility encapsulates AC3/DTS/MPEG Audio stream into SPDIF stream\n"
+"according to IEC 61937\n"
+"\n"
+"This utility is a part of AC3Filter project (http://ac3filter.net)\n"
+"Copyright (c) 2007-2011 by Alexander Vigovsky\n"
+"\n"
+"Usage:\n"
+"  spdifer input_file output_file [-raw | -wav]\n"
+"\n"
+"Options:\n"
+"  input_file  - file to convert\n"
+"  output_file - file to write result to\n"
+"  -raw - make raw SPDIF stream output (default)\n"
+"  -wav - make PCM WAV file with SPDIF data (for writing to CD Audio)\n"
+;
