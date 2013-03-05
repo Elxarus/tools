@@ -13,7 +13,7 @@
 
 #include "wavconv_usage.txt.h"
 
-const size_t block_size = 8192;
+const size_t chunk_size = 8192;
 
 const struct
 {
@@ -37,7 +37,7 @@ int text2format(const char *text)
 }
 
 
-int main(int argc, const char **argv)
+int wavconv_proc(int argc, const char **argv)
 {
   if (argc < 3)
   {
@@ -119,7 +119,7 @@ int main(int argc, const char **argv)
   /////////////////////////////////////////////////////////////////////////////
   // Open files
 
-  WAVSource source(input_filename, block_size);
+  WAVSource source(input_filename, chunk_size);
   if (!source.is_open())
   {
     printf("Error: cannot open file: %s\n", input_filename);
@@ -145,7 +145,7 @@ int main(int argc, const char **argv)
 
   FilterChain chain;
 
-  Converter in_conv(block_size);
+  Converter in_conv(chunk_size);
   in_conv.set_format(FORMAT_LINEAR);
   chain.add_back(&in_conv);
 
@@ -176,7 +176,7 @@ int main(int argc, const char **argv)
   AGC agc;
   chain.add_back(&agc);
 
-  Converter out_conv(block_size);
+  Converter out_conv(chunk_size);
   if (format != FORMAT_UNKNOWN)
     out_conv.set_format(format);
   else
@@ -224,5 +224,19 @@ int main(int argc, const char **argv)
   sink.flush();
 
   printf("100%%\n");
+  return 0;
+}
+
+int main(int argc, const char *argv[])
+{
+  try
+  {
+    return wavconv_proc(argc, argv);
+  }
+  catch (ValibException &e)
+  {
+    printf("Processing error: %s\n", boost::diagnostic_information(e).c_str());
+    return -1;
+  }
   return 0;
 }

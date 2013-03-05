@@ -66,6 +66,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "aac", "..\valib\lib\aac.vcp
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mpa", "..\valib\lib\mpa.vcproj", "{11F10C24-A2EC-4514-AD78-85CF2FEF698D}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "wavconv", "wavconv.vcproj", "{5AAB16AD-B353-4DB3-A363-9FCC058F9220}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -194,6 +196,14 @@ Global
 		{11F10C24-A2EC-4514-AD78-85CF2FEF698D}.Release|Win32.Build.0 = Release|Win32
 		{11F10C24-A2EC-4514-AD78-85CF2FEF698D}.Release|x64.ActiveCfg = Release|x64
 		{11F10C24-A2EC-4514-AD78-85CF2FEF698D}.Release|x64.Build.0 = Release|x64
+		{5AAB16AD-B353-4DB3-A363-9FCC058F9220}.Debug|Win32.ActiveCfg = Debug|Win32
+		{5AAB16AD-B353-4DB3-A363-9FCC058F9220}.Debug|Win32.Build.0 = Debug|Win32
+		{5AAB16AD-B353-4DB3-A363-9FCC058F9220}.Debug|x64.ActiveCfg = Debug|x64
+		{5AAB16AD-B353-4DB3-A363-9FCC058F9220}.Debug|x64.Build.0 = Debug|x64
+		{5AAB16AD-B353-4DB3-A363-9FCC058F9220}.Release|Win32.ActiveCfg = Release|Win32
+		{5AAB16AD-B353-4DB3-A363-9FCC058F9220}.Release|Win32.Build.0 = Release|Win32
+		{5AAB16AD-B353-4DB3-A363-9FCC058F9220}.Release|x64.ActiveCfg = Release|x64
+		{5AAB16AD-B353-4DB3-A363-9FCC058F9220}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
