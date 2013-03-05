@@ -31,8 +31,7 @@
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
-				CommandLine="copy /b ..\valib\3rdparty\ffmpeg\bin\*.dll $(OutDir)"
-				Outputs="$(OutDir)\avcodec-52.dll;$(OutDir)\avutil-50.dll"
+				CommandLine=""
 			/>
 			<Tool
 				Name="VCXMLDataGeneratorTool"
@@ -66,7 +65,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="dsound.lib"
+				AdditionalDependencies="dsound.lib ../valib/3rdparty/ffmpeg/lib/libavcodec.lib ../valib/3rdparty/ffmpeg/lib/libavutil.lib"
 				LinkIncremental="2"
 				GenerateDebugInformation="true"
 				SubSystem="1"
@@ -106,8 +105,7 @@
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
-				CommandLine="copy /b ..\valib\3rdparty\ffmpeg\bin\x64\*.dll $(OutDir)"
-				Outputs="$(OutDir)\avcodec64-52.dll;$(OutDir)\avutil64-50.dll"
+				CommandLine=""
 			/>
 			<Tool
 				Name="VCXMLDataGeneratorTool"
@@ -142,7 +140,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="dsound.lib"
+				AdditionalDependencies="dsound.lib ../valib/3rdparty/ffmpeg/lib/x64/libavcodec.lib ../valib/3rdparty/ffmpeg/lib/x64/libavutil.lib"
 				LinkIncremental="2"
 				GenerateDebugInformation="true"
 				SubSystem="1"
@@ -183,8 +181,7 @@
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
-				CommandLine="copy /b ..\valib\3rdparty\ffmpeg\bin\*.dll $(OutDir)"
-				Outputs="$(OutDir)\avcodec-52.dll;$(OutDir)\avutil-50.dll"
+				CommandLine=""
 			/>
 			<Tool
 				Name="VCXMLDataGeneratorTool"
@@ -218,7 +215,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="dsound.lib"
+				AdditionalDependencies="dsound.lib ../valib/3rdparty/ffmpeg/lib/libavcodec.lib ../valib/3rdparty/ffmpeg/lib/libavutil.lib"
 				LinkIncremental="1"
 				GenerateDebugInformation="true"
 				SubSystem="1"
@@ -261,8 +258,7 @@
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
-				CommandLine="copy /b ..\valib\3rdparty\ffmpeg\bin\x64\*.dll $(OutDir)"
-				Outputs="$(OutDir)\avcodec64-52.dll;$(OutDir)\avutil64-50.dll"
+				CommandLine=""
 			/>
 			<Tool
 				Name="VCXMLDataGeneratorTool"
@@ -297,7 +293,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="dsound.lib"
+				AdditionalDependencies="dsound.lib ../valib/3rdparty/ffmpeg/lib/x64/libavcodec.lib ../valib/3rdparty/ffmpeg/lib/x64/libavutil.lib"
 				LinkIncremental="1"
 				GenerateDebugInformation="true"
 				SubSystem="1"
