@@ -104,6 +104,23 @@ int spdifer_proc(int argc, const char **argv)
     {
       Speakers new_spk = file.get_output();
       printf("Input stream found: %s\n", new_spk.print().c_str());
+
+      while (spdifer.flush(out_chunk))
+      {
+        if (spdifer.new_stream())
+        {
+          Speakers new_spk = spdifer.get_output();
+          printf("Opening output stream: %s\n", new_spk.print().c_str());
+          if (!sink->open(new_spk))
+          {
+            printf("Error: cannot open sink\n");
+            return -1;
+          }
+        }
+        sink->process(out_chunk);
+      }
+      sink->flush();
+
       if (!spdifer.open(new_spk))
       {
         printf("Error: cannot process this format\n");
