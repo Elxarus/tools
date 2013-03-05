@@ -1,4 +1,5 @@
 #include "auto_file.h"
+#include "swab_usage.txt.h"
 
 size_t bs_conv_swab16(const uint8_t *in_buf, size_t size, uint8_t *out_buf)
 {
@@ -16,11 +17,7 @@ int main(int argc, char **argv)
 {
   if (argc < 3)
   {
-    printf(
-"Swab utility - swap bytes in the file\n"
-"\n"
-"Usage:\n"
-"  > swab input_file output_file\n");
+    printf(usage);
     return -1;
   }
 
