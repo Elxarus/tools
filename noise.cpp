@@ -9,34 +9,58 @@
 #include "vargs.h"
 #include "noise_usage.txt.h"
 
-const int mask_tbl[] =
+const enum_opt mask_tbl[] =
 {
-  0,
-  MODE_MONO,
-  MODE_STEREO,
-  MODE_3_0,
-  MODE_2_2,
-  MODE_3_2,
-  MODE_5_1
+  { "mono",   MODE_MONO },
+  { "stereo", MODE_STEREO },
+  { "quadro", MODE_2_2 },
+  { "2.1",    MODE_2_0_LFE },
+  { "4.1",    MODE_2_2_LFE },
+  { "5.1",    MODE_5_1 },
+  { "6.1",    MODE_6_1 },
+  { "7.1",    MODE_7_1 },
+  { "l",      CH_MASK_L },
+  { "c",      CH_MASK_C },
+  { "r",      CH_MASK_R },
+  { "sl",     CH_MASK_SL },
+  { "sr",     CH_MASK_SR },
+  { "cl",     CH_MASK_CL },
+  { "cr",     CH_MASK_CR },
+  { "lfe",    CH_MASK_LFE },
+  // Backwards compatibility
+  { "0",      0 },
+  { "1",      MODE_MONO },
+  { "2",      MODE_STEREO },
+  { "3",      MODE_3_0 },
+  { "4",      MODE_QUADRO },
+  { "5",      MODE_3_2 },
+  { "6",      MODE_5_1 },
 };
 
-const int format_tbl[] = 
+const enum_opt format_tbl[] = 
 {
-  FORMAT_PCM16,
-  FORMAT_PCM24,
-  FORMAT_PCM32,
-  FORMAT_PCM16_BE,
-  FORMAT_PCM24_BE,
-  FORMAT_PCM32_BE,
-  FORMAT_PCMFLOAT,
-  FORMAT_PCMDOUBLE,
+  { "pcm16",   FORMAT_PCM16 },
+  { "pcm24",   FORMAT_PCM24 },
+  { "pcm32",   FORMAT_PCM32 },
+  { "pcm16be", FORMAT_PCM16_BE },
+  { "pcm24be", FORMAT_PCM24_BE },
+  { "pcm32be", FORMAT_PCM32_BE },
+  { "pcm_float",  FORMAT_PCMFLOAT },
+  { "pcm_double", FORMAT_PCMDOUBLE },
+  // Backwards compatibility
+  { "0", FORMAT_PCM16 },
+  { "1", FORMAT_PCM24 },
+  { "2", FORMAT_PCM32 },
+  { "3", FORMAT_PCM16_BE },
+  { "4", FORMAT_PCM24_BE },
+  { "5", FORMAT_PCM32_BE },
+  { "6", FORMAT_PCMFLOAT },
+  { "7", FORMAT_PCMDOUBLE },
 };
 
-
-
-int noise_proc(int argc, const char **argv)
+int noise_proc(const arg_list_t &args)
 {
-  if (argc < 2)
+  if (args.size() < 2)
   {
     printf(usage);
     return -1;
@@ -47,8 +71,8 @@ int noise_proc(int argc, const char **argv)
   WAVSink     wav;
   Sink *sink = 0;
 
-  int imask = 2;
-  int iformat = 0;
+  int mask = 0;
+  int format = 0;
   int sample_rate = 48000;
   int seed = 0;
   double gain_db = 1.0;
@@ -57,47 +81,34 @@ int noise_proc(int argc, const char **argv)
   // Parse arguments
   /////////////////////////////////////////////////////////
 
-  int ms = atoi(argv[1]);
-  for (int iarg = 2; iarg < argc; iarg++)
+  int ms = atoi(args[1].raw.c_str());
+  for (size_t iarg = 2; iarg < args.size(); iarg++)
   {
+    const arg_t &arg = args[iarg];
+
     ///////////////////////////////////////////////////////
     // Output format
     ///////////////////////////////////////////////////////
 
     // -spk - number of speakers
-    if (is_arg(argv[iarg], "spk", argt_num))
+    if (arg.is_option("spk", argt_enum))
     {
-      imask = int(arg_num(argv[iarg]));
-
-      if (imask < 1 || imask > array_size(mask_tbl))
-      {
-        printf("-spk : incorrect speaker configuration\n");
-        return -1;
-      }
+      int new_mask = arg.choose(mask_tbl, array_size(mask_tbl));
+      mask |= new_mask;
       continue;
     }
 
     // -fmt - sample format
-    if (is_arg(argv[iarg], "fmt", argt_num))
+    if (arg.is_option("fmt", argt_enum))
     {
-      iformat = int(arg_num(argv[iarg]));
-      if (iformat < 0 || iformat > array_size(format_tbl))
-      {
-        printf("-fmt : incorrect sample format");
-        return -1;
-      }
+      format = arg.choose(format_tbl, array_size(format_tbl));
       continue;
     }
 
     // -rate - sample rate
-    if (is_arg(argv[iarg], "rate", argt_num))
+    if (arg.is_option("rate", argt_int))
     {
-      sample_rate = int(arg_num(argv[iarg]));
-      if (sample_rate < 0)
-      {
-        printf("-rate : incorrect sample rate");
-        return -1;
-      }
+      sample_rate = arg.as_int();
       continue;
     }
 
@@ -106,8 +117,8 @@ int noise_proc(int argc, const char **argv)
     ///////////////////////////////////////////////////////
 
     // -p[lay] - play
-    if (is_arg(argv[iarg], "p", argt_exist) || 
-        is_arg(argv[iarg], "play", argt_exist))
+    if (arg.is_option("p", argt_exist) || 
+        arg.is_option("play", argt_exist))
     {
       if (sink)
       {
@@ -120,21 +131,21 @@ int noise_proc(int argc, const char **argv)
     }
     
     // -r[aw] - RAW output
-    if (is_arg(argv[iarg], "r", argt_exist) ||
-        is_arg(argv[iarg], "raw", argt_exist))
+    if (arg.is_option("r", argt_exist) ||
+        arg.is_option("raw", argt_exist))
     {
       if (sink)
       {
         printf("-raw : ambiguous output mode\n");
         return -1;
       }
-      if (argc - iarg < 1)
+      if (args.size() - iarg < 1)
       {
         printf("-raw : specify a file name\n");
         return -1;
       }
 
-      const char * filename = argv[++iarg];
+      const char *filename = args[++iarg].raw.c_str();
       if (!raw.open_file(filename))
       {
         printf("-raw : cannot open file '%s'\n", filename);
@@ -146,21 +157,21 @@ int noise_proc(int argc, const char **argv)
     }
 
     // -w[av] - WAV output
-    if (is_arg(argv[iarg], "w", argt_exist) ||
-        is_arg(argv[iarg], "wav", argt_exist))
+    if (arg.is_option("w", argt_exist) ||
+        arg.is_option("wav", argt_exist))
     {
       if (sink)
       {
         printf("-wav : ambiguous output mode\n");
         return -1;
       }
-      if (argc - iarg < 1)
+      if (args.size() - iarg < 1)
       {
         printf("-wav : specify a file name\n");
         return -1;
       }
 
-      const char * filename = argv[++iarg];
+      const char *filename = args[++iarg].raw.c_str();
       if (!wav.open_file(filename))
       {
         printf("-wav : cannot open file '%s'\n", filename);
@@ -172,18 +183,13 @@ int noise_proc(int argc, const char **argv)
     }
 
     // -seed - RNG seed
-    if (is_arg(argv[iarg], "seed", argt_num))
+    if (arg.is_option("seed", argt_int))
     {
-      seed = int(arg_num(argv[iarg]));
-      if (sample_rate < 0)
-      {
-        printf("-rate : incorrect sample rate");
-        return -1;
-      }
+      seed = arg.as_int();
       continue;
     }
 
-    printf("Error: unknown option: %s\n", argv[iarg]);
+    printf("Error: unknown option: %s\n", arg.raw.c_str());
     return -1;
   }
 
@@ -197,7 +203,7 @@ int noise_proc(int argc, const char **argv)
     dsound.open_dsound(0);
   }
 
-  Speakers spk(format_tbl[iformat], mask_tbl[imask], sample_rate);
+  Speakers spk(format, mask, sample_rate);
   printf("Opening %s %s %iHz audio output...\n", spk.format_text(), spk.mode_text(), spk.sample_rate);
 
   if (!sink->open(spk))
@@ -247,11 +253,16 @@ int main(int argc, const char *argv[])
 {
   try
   {
-    return noise_proc(argc, argv);
+    return noise_proc(args_utf8(argc, argv));
   }
   catch (ValibException &e)
   {
     printf("Processing error: %s\n", boost::diagnostic_information(e).c_str());
+    return -1;
+  }
+  catch (arg_t::bad_value_e &e)
+  {
+    printf("Bad argument value: %s", e.arg.c_str());
     return -1;
   }
   return 0;

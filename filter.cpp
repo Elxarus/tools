@@ -12,16 +12,16 @@
 
 const int block_size = 65536;
 
-int filter_proc(int argc, const char **argv)
+int filter_proc(const arg_list_t &args)
 {
-  if (argc < 3)
+  if (args.size() < 3)
   {
     printf(usage);
     return 0;
   }
 
-  const char *input_filename = argv[1];
-  const char *output_filename = argv[2];
+  const char *input_filename = args[1].raw.c_str();
+  const char *output_filename = args[2].raw.c_str();
   double f = 0;
   double f2 = 0;
   double df = 0;
@@ -33,76 +33,78 @@ int filter_proc(int argc, const char **argv)
   /////////////////////////////////////////////////////////////////////////////
   // Parse arguments
 
-  for (int iarg = 3; iarg < argc; iarg++)
+  for (size_t iarg = 3; iarg < args.size(); iarg++)
   {
+    const arg_t &arg = args[iarg];
+
     // -<type>
-    if (is_arg(argv[iarg], "lowpass", argt_exist))
+    if (arg.is_option("lowpass", argt_exist))
     {
       type = ParamFIR::low_pass;
       continue;
     }
 
-    if (is_arg(argv[iarg], "highpass", argt_exist))
+    if (arg.is_option("highpass", argt_exist))
     {
       type = ParamFIR::high_pass;
       continue;
     }
 
-    if (is_arg(argv[iarg], "bandpass", argt_exist))
+    if (arg.is_option("bandpass", argt_exist))
     {
       type = ParamFIR::band_pass;
       continue;
     }
 
-    if (is_arg(argv[iarg], "bandstop", argt_exist))
+    if (arg.is_option("bandstop", argt_exist))
     {
       type = ParamFIR::band_stop;
       continue;
     }
 
     // -f
-    if (is_arg(argv[iarg], "f", argt_num))
+    if (arg.is_option("f", argt_double))
     {
-      f = arg_num(argv[iarg]);
+      f = arg.as_double();
       continue;
     }
 
     // -f2
-    if (is_arg(argv[iarg], "f2", argt_num))
+    if (arg.is_option("f2", argt_double))
     {
-      f2 = arg_num(argv[iarg]);
+      f2 = arg.as_double();
       continue;
     }
 
     // -df
-    if (is_arg(argv[iarg], "df", argt_num))
+    if (arg.is_option("df", argt_double))
     {
-      df = arg_num(argv[iarg]);
+      df = arg.as_double();
       continue;
     }
 
     // -a
-    if (is_arg(argv[iarg], "a", argt_num))
+    if (arg.is_option("a", argt_double))
     {
-      a = arg_num(argv[iarg]);
+      a = arg.as_double();
       continue;
     }
 
     // -norm
-    if (is_arg(argv[iarg], "norm", argt_exist))
+    if (arg.is_option("norm", argt_exist))
     {
       norm = true;
       continue;
     }
 
     // -dither
-    if (is_arg(argv[iarg], "dither", argt_exist))
+    if (arg.is_option("dither", argt_exist))
     {
       do_dither = true;
       continue;
     }
 
-    printf("Error: unknown option: %s\n", argv[iarg]);
+    printf("Error: unknown option: %s\n", arg.raw.c_str());
     return -1;
   }
 
@@ -253,11 +255,16 @@ int main(int argc, const char *argv[])
 {
   try
   {
-    return filter_proc(argc, argv);
+    return filter_proc(args_utf8(argc, argv));
   }
   catch (ValibException &e)
   {
     printf("Processing error: %s\n", boost::diagnostic_information(e).c_str());
+    return -1;
+  }
+  catch (arg_t::bad_value_e &e)
+  {
+    printf("Bad argument value: %s", e.arg.c_str());
     return -1;
   }
   return 0;

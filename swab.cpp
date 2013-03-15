@@ -1,5 +1,6 @@
 #include "auto_file.h"
 #include "swab_usage.txt.h"
+#include "vargs.h"
 
 size_t bs_conv_swab16(const uint8_t *in_buf, size_t size, uint8_t *out_buf)
 {
@@ -13,9 +14,11 @@ size_t bs_conv_swab16(const uint8_t *in_buf, size_t size, uint8_t *out_buf)
 }
 
 
-int main(int argc, char **argv)
+int main(int argc, const char *argv[])
 {
-  if (argc < 3)
+  arg_list_t args = args_utf8(argc, argv);
+
+  if (args.size() < 3)
   {
     printf(usage);
     return -1;
@@ -24,8 +27,8 @@ int main(int argc, char **argv)
   /////////////////////////////////////////////////////////
   // Open files
 
-  char *in_filename = argv[1];
-  char *out_filename = argv[2];
+  const char *in_filename = args[1].raw.c_str();
+  const char *out_filename = args[2].raw.c_str();
 
   AutoFile in_file(in_filename);
   if (!in_file.is_open())

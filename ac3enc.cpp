@@ -9,9 +9,9 @@
 #include "vargs.h"
 #include "ac3enc_usage.txt.h"
 
-int ac3enc(int argc, const char *argv[])
+int ac3enc(const arg_list_t &args)
 {
-  if (argc < 3)
+  if (args.size() < 3)
   {
     printf(usage);
     return -1;
@@ -21,19 +21,21 @@ int ac3enc(int argc, const char *argv[])
   // Parse arguments
   /////////////////////////////////////////////////////////
 
-  const char *input_filename = argv[1];
-  const char *output_filename = argv[2];
+  const char *input_filename = args[1].raw.c_str();
+  const char *output_filename = args[2].raw.c_str();
   int bitrate = 448;
 
-  for (int iarg = 3; iarg < argc; iarg++)
+  for (size_t iarg = 3; iarg < args.size(); iarg++)
   {
-    if (is_arg(argv[iarg], "br", argt_num))
+    const arg_t &arg = args[iarg];
+
+    if (arg.is_option("br", argt_int))
     {
-       bitrate = (int)arg_num(argv[iarg]);
+       bitrate = arg.as_int();
        continue;
     }
 
-    printf("Error: unknown option: %s\n", argv[iarg]);
+    printf("Error: unknown option: %s\n", arg.raw.c_str());
     return -1;
   }
 
@@ -51,7 +53,7 @@ int ac3enc(int argc, const char *argv[])
   RAWSink sink;
   if (!sink.open_file(output_filename))
   {
-    printf("Error: Cannot open file for writing '%s'\n", argv[2]);
+    printf("Error: Cannot open file for writing '%s'\n", output_filename);
     return -1;
   }
 
@@ -157,11 +159,16 @@ int main(int argc, const char *argv[])
 {
   try
   {
-    return ac3enc(argc, argv);
+    return ac3enc(args_utf8(argc, argv));
   }
   catch (ValibException &e)
   {
     printf("Processing error: %s\n", boost::diagnostic_information(e).c_str());
+    return -1;
+  }
+  catch (arg_t::bad_value_e &e)
+  {
+    printf("Bad argument value: %s", e.arg.c_str());
     return -1;
   }
   return 0;

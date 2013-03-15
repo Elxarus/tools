@@ -57,6 +57,7 @@ Options:
           pcm24             pcm24be
           pcm32             pcm32be
           pcm_float         pcm_double
+
       List of sample formats for backwards compatibility:
           0 - PCM 16        3 - PCM 16 (big endian)
           1 - PCM 24        4 - PCM 24 (big endian) 
@@ -98,9 +99,14 @@ Options:
     -release:N - release speed (dB/s)
   
   delay options:
-    -delay_units:n - units in wich delay values are given
-          0 - samples (*) 2 - meters      4 - feet   
-          1 - ms          3 - cm          5 - inches 
+    -delay_units:n - units in wich delay values are given:
+      (*) s  - samples       m  - meters       ft - feet  
+          ms - milliseconds  cm - centimeters  in - inches
+                               
+      Backwards compatibility:
+          0 - samples        2 - meters        4 - feet   
+          1 - milliseconds   3 - centimeters   5 - inches 
+
     -delay_{ch}:N - delay for channel {ch} (in samples by default) 
   
   Channel names used at some parameters:

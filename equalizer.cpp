@@ -12,18 +12,18 @@
 const int block_size = 65536;
 const int max_bands = 100;
 
-int equalizer_proc(int argc, const char **argv)
+int equalizer_proc(const arg_list_t &args)
 {
   int i;
 
-  if (argc < 3)
+  if (args.size() < 3)
   {
     printf(usage);
     return 0;
   }
 
-  const char *input_filename = argv[1];
-  const char *output_filename = argv[2];
+  const char *input_filename = args[1].raw.c_str();
+  const char *output_filename = args[2].raw.c_str();
   EqBand bands[max_bands];
   bool do_dither = false;
 
@@ -32,12 +32,14 @@ int equalizer_proc(int argc, const char **argv)
   /////////////////////////////////////////////////////////////////////////////
   // Parse arguments
 
-  for (int iarg = 3; iarg < argc; iarg++)
+  for (size_t iarg = 3; iarg < args.size(); iarg++)
   {
+    const arg_t &arg = args[iarg];
+
     // -dither
-    if (is_arg(argv[iarg], "dither", argt_bool))
+    if (arg.is_option("dither", argt_bool))
     {
-      do_dither = arg_bool(argv[iarg]);
+      do_dither = arg.as_bool();
       continue;
     }
     else
@@ -47,21 +49,21 @@ int equalizer_proc(int argc, const char **argv)
       {
         char buf[10];
         sprintf(buf, "f%i", i);
-        if (is_arg(argv[iarg], buf, argt_num))
+        if (arg.is_option(buf, argt_int))
         {
-          bands[i].freq = (int)arg_num(argv[iarg]);
+          bands[i].freq = arg.as_int();
           break;
         }
 
         sprintf(buf, "g%i", i);
-        if (is_arg(argv[iarg], buf, argt_num))
+        if (arg.is_option(buf, argt_double))
         {
           if (bands[i].freq == 0)
           {
             printf("Unknown freqency for band %i (define the band's frequency before the gain)\n", i);
             return -1;
           }
-          bands[i].gain = arg_num(argv[iarg]);
+          bands[i].gain = arg.as_double();
           break;
         }
       }
@@ -70,7 +72,7 @@ int equalizer_proc(int argc, const char **argv)
         continue;
     }
 
-    printf("Error: unknown option: %s\n", argv[iarg]);
+    printf("Error: unknown option: %s\n", arg.raw.c_str());
     return -1;
   }
 
@@ -195,11 +197,16 @@ int main(int argc, const char *argv[])
 {
   try
   {
-    return equalizer_proc(argc, argv);
+    return equalizer_proc(args_utf8(argc, argv));
   }
   catch (ValibException &e)
   {
     printf("Processing error: %s\n", boost::diagnostic_information(e).c_str());
+    return -1;
+  }
+  catch (arg_t::bad_value_e &e)
+  {
+    printf("Bad argument value: %s", e.arg.c_str());
     return -1;
   }
   return 0;

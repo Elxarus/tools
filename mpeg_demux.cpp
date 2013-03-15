@@ -190,7 +190,7 @@ void demux(FILE *f, FILE *out, int stream, int substream, bool pes)
 // Main
 ///////////////////////////////////////////////////////////////////////////////
 
-int main(int argc, const char **argv)
+int mpeg_demux(const arg_list_t &args)
 {
   int stream = 0;
   int substream = 0;
@@ -201,23 +201,22 @@ int main(int argc, const char **argv)
   FILE *f = 0;
   FILE *out = 0;
 
-  if (argc < 2)
+  if (args.size() < 2)
   {
     printf(usage);
     return -1;
   }
 
-  int  iarg = 0;
   enum { mode_none, mode_info, mode_es, mode_pes } mode = mode_none;
 
   // Parse arguments
-
-  filename = argv[1];
-
-  for (iarg = 2; iarg < argc; iarg++)
+  filename = args[1].raw.c_str();
+  for (size_t iarg = 2; iarg < args.size(); iarg++)
   {
+    const arg_t &arg = args[iarg];
+
     // -i - info
-    if (is_arg(argv[iarg], "i", argt_exist))
+    if (arg.is_option("i", argt_exist))
     {
       if (mode != mode_none)
       {
@@ -230,9 +229,9 @@ int main(int argc, const char **argv)
     }  
 
     // -d - demux to es
-    if (is_arg(argv[iarg], "d", argt_exist))
+    if (arg.is_option("d", argt_exist))
     {
-      if (argc - iarg < 2)
+      if (args.size() - iarg < 2)
       {
         printf("-d : specify a file name\n");
         return 1;
@@ -244,14 +243,14 @@ int main(int argc, const char **argv)
       }
 
       mode = mode_es;
-      filename_out = argv[++iarg];
+      filename_out = args[++iarg].raw.c_str();
       continue;
     }
 
     // -p - demux to pes
-    if (is_arg(argv[iarg], "p", argt_exist))
+    if (arg.is_option("p", argt_exist))
     {
-      if (argc - iarg < 2)
+      if (args.size() - iarg < 2)
       {
         printf("-p : specify a file name\n");
         return 1;
@@ -263,25 +262,25 @@ int main(int argc, const char **argv)
       }
 
       mode = mode_pes;
-      filename_out = argv[++iarg];
+      filename_out = args[++iarg].raw.c_str();
       continue;
     }
 
     // -stream - stream to demux
-    if (is_arg(argv[iarg], "s", argt_hex))
+    if (arg.is_option("s", argt_int))
     {
-      stream = arg_hex(argv[iarg]);
+      stream = arg.as_int();
       continue;
     }
 
     // -substream - substream to demux
-    if (is_arg(argv[iarg], "ss", argt_hex))
+    if (arg.is_option("ss", argt_int))
     {
-      substream = arg_hex(argv[iarg]);
+      substream = arg.as_int();
       continue;
     }
 
-    printf("Unknown parameter: %s\n", argv[iarg]);
+    printf("Unknown parameter: %s\n", arg.raw.c_str());
     return 1;
   }
 
@@ -331,5 +330,18 @@ int main(int argc, const char **argv)
   fclose(f);
   if (out) fclose(out);
 
+  return 0;
+}
+
+int main(int argc, const char *argv[])
+{
+  try {
+    return mpeg_demux(args_utf8(argc, argv));
+  }
+  catch (arg_t::bad_value_e &e)
+  {
+    printf("Bad argument value: %s", e.arg.c_str());
+    return -1;
+  }
   return 0;
 }

@@ -15,38 +15,25 @@
 
 const size_t chunk_size = 8192;
 
-const struct
+const enum_opt format_tbl[] = 
 {
-  const char *format_name;
-  int format;
-} format_tbl[] =
-{
-  { "pcm16", FORMAT_PCM16 },
-  { "pcm24", FORMAT_PCM24 },
-  { "pcm32", FORMAT_PCM32 },
-  { "pcm_float",  FORMAT_PCMFLOAT  },
+  { "pcm16",   FORMAT_PCM16 },
+  { "pcm24",   FORMAT_PCM24 },
+  { "pcm32",   FORMAT_PCM32 },
+  { "pcm_float",  FORMAT_PCMFLOAT },
   { "pcm_double", FORMAT_PCMDOUBLE },
 };
 
-int text2format(const char *text)
+int wavconv_proc(const arg_list_t &args)
 {
-  for (int i = 0; i < array_size(format_tbl); i++)
-    if (strcmp(format_tbl[i].format_name, text) == 0)
-      return format_tbl[i].format;
-  return FORMAT_UNKNOWN;
-}
-
-
-int wavconv_proc(int argc, const char **argv)
-{
-  if (argc < 3)
+  if (args.size() < 3)
   {
     printf(usage);
     return -1;
   }
 
-  const char *input_filename = argv[1];
-  const char *output_filename = argv[2];
+  const char *input_filename = args[1].raw.c_str();
+  const char *output_filename = args[2].raw.c_str();
   int rate = 0;          // output sample rate
   double a = 100;        // src attenuation
   double q = 0.99;       // src quality
@@ -58,61 +45,57 @@ int wavconv_proc(int argc, const char **argv)
   /////////////////////////////////////////////////////////////////////////////
   // Parse arguments
 
-  for (int iarg = 3; iarg < argc; iarg++)
+  for (size_t iarg = 3; iarg < args.size(); iarg++)
   {
-    if (is_arg(argv[iarg], "rate", argt_num) ||
-        is_arg(argv[iarg], "r", argt_num))
+    const arg_t &arg = args[iarg];
+
+    if (arg.is_option("rate", argt_int) ||
+        arg.is_option("r", argt_int))
     {
-      rate = (int)arg_num(argv[iarg]);
+      rate = arg.as_int();
       continue;
     }
 
-    if (is_arg(argv[iarg], "attenuation", argt_num) ||
-        is_arg(argv[iarg], "a", argt_num))
+    if (arg.is_option("attenuation", argt_double) ||
+        arg.is_option("a", argt_double))
     {
-      a = arg_num(argv[iarg]);
+      a = arg.as_double();
       continue;
     }
 
-    if (is_arg(argv[iarg], "quality", argt_num) ||
-        is_arg(argv[iarg], "q", argt_num))
+    if (arg.is_option("quality", argt_double) ||
+        arg.is_option("q", argt_double))
     {
-      q = arg_num(argv[iarg]);
+      q = arg.as_double();
       continue;
     }
 
-    if (is_arg(argv[iarg], "gain", argt_num) ||
-        is_arg(argv[iarg], "g", argt_num))
+    if (arg.is_option("gain", argt_double) ||
+        arg.is_option("g", argt_double))
     {
-      g = arg_num(argv[iarg]);
+      g = arg.as_double();
       continue;
     }
 
-    if (is_arg(argv[iarg], "cut_start", argt_num))
+    if (arg.is_option("cut_start", argt_double))
     {
-      cut_start = arg_num(argv[iarg]);
+      cut_start = arg.as_double();
       continue;
     }
 
-    if (is_arg(argv[iarg], "cut_end", argt_num))
+    if (arg.is_option("cut_end", argt_double))
     {
-      cut_end = arg_num(argv[iarg]);
+      cut_end = arg.as_double();
       continue;
     }
 
-    if (is_arg(argv[iarg], "format", argt_text))
+    if (arg.is_option("format", argt_enum))
     {
-      const char *format_name = arg_text(argv[iarg]);
-      format = text2format(format_name);
-      if (format == FORMAT_UNKNOWN)
-      {
-        printf("Error: unknown format %s\n", format_name);
-        return -1;
-      }
+      format = arg.choose(format_tbl, array_size(format_tbl));
       continue;
     }
 
-    printf("Error: unknown option: %s\n", argv[iarg]);
+    printf("Error: unknown option: %s\n", arg.raw.c_str());
     return -1;
   }
 
@@ -231,11 +214,16 @@ int main(int argc, const char *argv[])
 {
   try
   {
-    return wavconv_proc(argc, argv);
+    return wavconv_proc(args_utf8(argc, argv));
   }
   catch (ValibException &e)
   {
     printf("Processing error: %s\n", boost::diagnostic_information(e).c_str());
+    return -1;
+  }
+  catch (arg_t::bad_value_e &e)
+  {
+    printf("Bad argument value: %s", e.arg.c_str());
     return -1;
   }
   return 0;

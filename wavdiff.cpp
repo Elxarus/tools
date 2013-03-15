@@ -13,16 +13,16 @@
 
 const int block_size = 65536;
 
-int wavdiff(int argc, const char **argv)
+int wavdiff(const arg_list_t &args)
 {
-  if (argc < 3)
+  if (args.size() < 3)
   {
     printf(usage);
     return -1;
   }
 
-  const char *filename1 = argv[1];
-  const char *filename2 = argv[2];
+  const char *filename1 = args[1].raw.c_str();
+  const char *filename2 = args[2].raw.c_str();
   const char *diff_filename = 0;
   bool check_diff = false;
   bool check_rms  = false;
@@ -34,42 +34,44 @@ int wavdiff(int argc, const char **argv)
   /////////////////////////////////////////////////////////////////////////////
   // Parse arguments
 
-  for (int iarg = 3; iarg < argc; iarg++)
+  for (size_t iarg = 3; iarg < args.size(); iarg++)
   {
-    if (is_arg(argv[iarg], "max_diff", argt_num))
+    const arg_t &arg = args[iarg];
+
+    if (arg.is_option("max_diff", argt_double))
     {
-      max_diff = arg_num(argv[iarg]);
+      max_diff = arg.as_double();
       check_diff = true;
       continue;
     }
 
-    if (is_arg(argv[iarg], "max_mean", argt_num))
+    if (arg.is_option("max_mean", argt_double))
     {
-      max_mean = arg_num(argv[iarg]);
+      max_mean = arg.as_double();
       check_mean = true;
       continue;
     }
 
-    if (is_arg(argv[iarg], "max_rms", argt_num))
+    if (arg.is_option("max_rms", argt_double))
     {
-      max_rms = arg_num(argv[iarg]);
+      max_rms = arg.as_double();
       check_rms = true;
       continue;
     }
 
-    if (is_arg(argv[iarg], "diff", argt_exist))
+    if (arg.is_option("diff", argt_exist))
     {
-      if (argc - iarg < 1)
+      if (args.size() - iarg < 1)
       {
         printf("-diff : specify a file name\n");
         return 1;
       }
 
-      diff_filename = argv[++iarg];
+      diff_filename = args[++iarg].raw.c_str();
       continue;
     }
 
-    printf("Error: unknown option: %s\n", argv[iarg]);
+    printf("Error: unknown option: %s\n", arg.raw.c_str());
     return -1;
   }
 
@@ -269,11 +271,16 @@ int main(int argc, const char *argv[])
 {
   try
   {
-    return wavdiff(argc, argv);
+    return wavdiff(args_utf8(argc, argv));
   }
   catch (ValibException &e)
   {
     printf("Processing error: %s\n", boost::diagnostic_information(e).c_str());
+    return -1;
+  }
+  catch (arg_t::bad_value_e &e)
+  {
+    printf("Bad argument value: %s", e.arg.c_str());
     return -1;
   }
   return 0;

@@ -328,6 +328,10 @@
 	</References>
 	<Files>
 		<File
+			RelativePath=".\utf8_console.cpp"
+			>
+		</File>
+		<File
 			RelativePath=".\valdec.cpp"
 			>
 		</File>

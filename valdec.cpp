@@ -94,10 +94,28 @@ const enum_opt format_tbl[] =
   { "7", FORMAT_PCMDOUBLE },
 };
 
-int valdec(int argc, const char *argv[])
+const enum_opt delay_units_tbl[] =
+{
+  { "sm", DELAY_SP },
+  { "ms", DELAY_MS },
+  { "m",  DELAY_M  },
+  { "cm", DELAY_CM },
+  { "ft", DELAY_FT },
+  { "in", DELAY_IN },
+
+  // Backwards compatibility
+  { "0", DELAY_SP },
+  { "1", DELAY_MS },
+  { "2", DELAY_M  },
+  { "3", DELAY_CM },
+  { "4", DELAY_FT },
+  { "5", DELAY_IN },
+};
+
+int valdec(const arg_list_t &args)
 {
   using std::string;
-  if (argc < 2)
+  if (args.size() < 2)
   {
     printf(usage);
     return 1;
@@ -111,7 +129,7 @@ int valdec(int argc, const char *argv[])
   /////////////////////////////////////////////////////////
   // Input file
 
-  const char *input_filename = argv[1];
+  const char *input_filename = args[1].raw.c_str();
   FileParser file;
 
   /////////////////////////////////////////////////////////
@@ -168,14 +186,16 @@ int valdec(int argc, const char *argv[])
   // Parse arguments
   /////////////////////////////////////////////////////////
 
-  for (int iarg = 2; iarg < argc; iarg++)
+  for (size_t iarg = 2; iarg < args.size(); iarg++)
   {
+    const arg_t &arg = args[iarg];
+
     ///////////////////////////////////////////////////////
     // Parsers
     ///////////////////////////////////////////////////////
 
     // -ac3 - force ac3 parser (do not autodetect format)
-    if (is_arg(argv[iarg], "ac3", argt_exist))
+    if (arg.is_option("ac3", argt_exist))
     {
       if (parser)
       {
@@ -188,7 +208,7 @@ int valdec(int argc, const char *argv[])
     }
 
     // -dts - force dts parser (do not autodetect format)
-    if (is_arg(argv[iarg], "dts", argt_exist))
+    if (arg.is_option("dts", argt_exist))
     {
       if (parser)
       {
@@ -201,7 +221,7 @@ int valdec(int argc, const char *argv[])
     }
 
     // -mpa - force mpa parser (do not autodetect format)
-    if (is_arg(argv[iarg], "mpa", argt_exist))
+    if (arg.is_option("mpa", argt_exist))
     {
       if (parser)
       {
@@ -218,42 +238,34 @@ int valdec(int argc, const char *argv[])
     ///////////////////////////////////////////////////////
 
     // -spk - number of speakers
-    if (is_arg(argv[iarg], "spk", argt_enum))
+    if (arg.is_option("spk", argt_enum))
     {
-      int new_mask;
-      if (!arg_enum(argv[iarg], new_mask, mask_tbl, array_size(mask_tbl)))
-      {
-        printf("-spk : unknown channel layout: %s\n", arg_text(argv[iarg]));
-        return 1;
-      }
+      int new_mask = arg.choose(mask_tbl, array_size(mask_tbl));
       mask |= new_mask;
       continue;
     }
 
     // -fmt - sample format
-    if (is_arg(argv[iarg], "fmt", argt_num))
+    if (arg.is_option("fmt", argt_enum))
     {
-      if (!arg_enum(argv[iarg], format, format_tbl, array_size(format_tbl)))
-      {
-        printf("-fmt : unknown sample format: %s\n", arg_text(argv[iarg]));
-        return 1;
-      }
+      format = arg.choose(format_tbl, array_size(format_tbl));
       continue;
     }
 
     // -rate - sample rate
-    if (is_arg(argv[iarg], "rate", argt_num))
+    if (arg.is_option("rate", argt_int))
     {
-      sample_rate = (int)arg_num(argv[iarg]);
+      sample_rate = arg.as_int();
       continue;
     }
+
     ///////////////////////////////////////////////////////
     // Sinks
     ///////////////////////////////////////////////////////
 
     // -d[ecode] - decode
-    if (is_arg(argv[iarg], "d", argt_exist) || 
-        is_arg(argv[iarg], "decode", argt_exist))
+    if (arg.is_option("d", argt_exist) || 
+        arg.is_option("decode", argt_exist))
     {
       if (sink)
       {
@@ -268,8 +280,8 @@ int valdec(int argc, const char *argv[])
     }
 
     // -p[lay] - play
-    if (is_arg(argv[iarg], "p", argt_exist) || 
-        is_arg(argv[iarg], "play", argt_exist))
+    if (arg.is_option("p", argt_exist) || 
+        arg.is_option("play", argt_exist))
     {
       if (sink)
       {
@@ -284,21 +296,21 @@ int valdec(int argc, const char *argv[])
     }
     
     // -r[aw] - RAW output
-    if (is_arg(argv[iarg], "r", argt_exist) ||
-        is_arg(argv[iarg], "raw", argt_exist))
+    if (arg.is_option("r", argt_exist) ||
+        arg.is_option("raw", argt_exist))
     {
       if (sink)
       {
         printf("-raw : ambiguous output mode\n");
         return 1;
       }
-      if (argc - iarg < 1)
+      if (args.size() - iarg < 1)
       {
         printf("-raw : specify a file name\n");
         return 1;
       }
 
-      out_filename = argv[++iarg];
+      out_filename = args[++iarg].raw.c_str();
       sink = &raw;
       control = 0;
       mode = mode_raw;
@@ -306,21 +318,21 @@ int valdec(int argc, const char *argv[])
     }
 
     // -w[av] - WAV output
-    if (is_arg(argv[iarg], "w", argt_exist) ||
-        is_arg(argv[iarg], "wav", argt_exist))
+    if (arg.is_option("w", argt_exist) ||
+        arg.is_option("wav", argt_exist))
     {
       if (sink)
       {
         printf("-wav : ambiguous output mode\n");
         return 1;
       }
-      if (argc - iarg < 1)
+      if (args.size() - iarg < 1)
       {
         printf("-wav : specify a file name\n");
         return 1;
       }
 
-      out_filename = argv[++iarg];
+      out_filename = args[++iarg].raw.c_str();
       sink = &wav;
       control = 0;
       mode = mode_wav;
@@ -328,8 +340,8 @@ int valdec(int argc, const char *argv[])
     }
 
     // -n[othing] - no output
-    if (is_arg(argv[iarg], "n", argt_exist) || 
-        is_arg(argv[iarg], "nothing", argt_exist))
+    if (arg.is_option("n", argt_exist) || 
+        arg.is_option("nothing", argt_exist))
     {
       if (sink)
       {
@@ -348,21 +360,21 @@ int valdec(int argc, const char *argv[])
     ///////////////////////////////////////////////////////
 
     // -i - print bitstream info
-    if (is_arg(argv[iarg], "i", argt_exist))
+    if (arg.is_option("i", argt_exist))
     {
       print_info = true;
       continue;
     }
 
     // -opt - print decoding options
-    if (is_arg(argv[iarg], "opt", argt_exist))
+    if (arg.is_option("opt", argt_exist))
     {
       print_opt = true;
       continue;
     }
 
     // -hist - print levels histogram
-    if (is_arg(argv[iarg], "hist", argt_exist))
+    if (arg.is_option("hist", argt_exist))
     {
       print_hist = true;
       continue;
@@ -373,58 +385,58 @@ int valdec(int argc, const char *argv[])
     ///////////////////////////////////////////////////////
 
     // -auto_matrix
-    if (is_arg(argv[iarg], "auto_matrix", argt_bool))
+    if (arg.is_option("auto_matrix", argt_bool))
     {
-      dvd_graph.proc.set_auto_matrix(arg_bool(argv[iarg]));
+      dvd_graph.proc.set_auto_matrix(arg.as_bool());
       continue;
     }
 
     // -normalize_matrix
-    if (is_arg(argv[iarg], "normalize_matrix", argt_bool))
+    if (arg.is_option("normalize_matrix", argt_bool))
     {
-      dvd_graph.proc.set_normalize_matrix(arg_bool(argv[iarg]));
+      dvd_graph.proc.set_normalize_matrix(arg.as_bool());
       continue;
     }
 
     // -voice_control
-    if (is_arg(argv[iarg], "voice_control", argt_bool))
+    if (arg.is_option("voice_control", argt_bool))
     {
-      dvd_graph.proc.set_voice_control(arg_bool(argv[iarg]));
+      dvd_graph.proc.set_voice_control(arg.as_bool());
       continue;
     }
 
     // -expand_stereo
-    if (is_arg(argv[iarg], "expand_stereo", argt_bool))
+    if (arg.is_option("expand_stereo", argt_bool))
     {
-      dvd_graph.proc.set_expand_stereo(arg_bool(argv[iarg]));
+      dvd_graph.proc.set_expand_stereo(arg.as_bool());
       continue;
     }
 
     // -clev
-    if (is_arg(argv[iarg], "clev", argt_num))
+    if (arg.is_option("clev", argt_double))
     {
-      dvd_graph.proc.set_clev(db2value(arg_num(argv[iarg])));
+      dvd_graph.proc.set_clev(db2value(arg.as_double()));
       continue;
     }
 
     // -slev
-    if (is_arg(argv[iarg], "slev", argt_num))
+    if (arg.is_option("slev", argt_double))
     {
-      dvd_graph.proc.set_slev(db2value(arg_num(argv[iarg])));
+      dvd_graph.proc.set_slev(db2value(arg.as_double()));
       continue;
     }
 
     // -lfelev
-    if (is_arg(argv[iarg], "lfelev", argt_num))
+    if (arg.is_option("lfelev", argt_double))
     {
-      dvd_graph.proc.set_lfelev(db2value(arg_num(argv[iarg])));
+      dvd_graph.proc.set_lfelev(db2value(arg.as_double()));
       continue;
     }
 
     // -gain
-    if (is_arg(argv[iarg], "gain", argt_num))
+    if (arg.is_option("gain", argt_double))
     {
-      dvd_graph.proc.set_master(db2value(arg_num(argv[iarg])));
+      dvd_graph.proc.set_master(db2value(arg.as_double()));
       continue;
     }
 
@@ -433,9 +445,9 @@ int valdec(int argc, const char *argv[])
     for (i = 0; i < array_size(ch_map) && !have_gain; i++)
     {
       string opt = string("gain_") + ch_map[i].name;
-      if (is_arg(argv[iarg], opt.c_str(), argt_num))
+      if (arg.is_option(opt, argt_double))
       {
-        gains[ch_map[i].ch] = db2value(arg_num(argv[iarg]));
+        gains[ch_map[i].ch] = db2value(arg.as_double());
         have_gain = true;
       }
     }
@@ -447,9 +459,9 @@ int valdec(int argc, const char *argv[])
       for (j = 0; j < array_size(ch_map) && !have_matrix; j++)
       {
         string opt = string(ch_map[i].name) + string("_") + string(ch_map[j].name);
-        if (is_arg(argv[iarg], opt.c_str(), argt_num))
+        if (arg.is_option(opt, argt_double))
         {
-          m[ch_map[i].ch][ch_map[j].ch] = arg_num(argv[iarg]);
+          m[ch_map[i].ch][ch_map[j].ch] = arg.as_double();
           have_matrix = true;
         }
       }
@@ -460,45 +472,45 @@ int valdec(int argc, const char *argv[])
     ///////////////////////////////////////////////////////
 
     // -agc
-    if (is_arg(argv[iarg], "agc", argt_bool))
+    if (arg.is_option("agc", argt_bool))
     {
-      dvd_graph.proc.set_auto_gain(arg_bool(argv[iarg]));
+      dvd_graph.proc.set_auto_gain(arg.as_bool());
       continue;
     }
 
     // -normalize
-    if (is_arg(argv[iarg], "normalize", argt_bool))
+    if (arg.is_option("normalize", argt_bool))
     {
-      dvd_graph.proc.set_normalize(arg_bool(argv[iarg]));
+      dvd_graph.proc.set_normalize(arg.as_bool());
       continue;
     }
 
     // -drc
-    if (is_arg(argv[iarg], "drc", argt_bool))
+    if (arg.is_option("drc", argt_bool))
     {
-      dvd_graph.proc.set_drc(arg_bool(argv[iarg]));
+      dvd_graph.proc.set_drc(arg.as_bool());
       continue;
     }
 
     // -drc_power
-    if (is_arg(argv[iarg], "drc_power", argt_num))
+    if (arg.is_option("drc_power", argt_double))
     {
       dvd_graph.proc.set_drc(true);
-      dvd_graph.proc.set_drc_power(arg_num(argv[iarg]));
+      dvd_graph.proc.set_drc_power(arg.as_double());
       continue;
     }
 
     // -attack
-    if (is_arg(argv[iarg], "attack", argt_num))
+    if (arg.is_option("attack", argt_double))
     {
-      dvd_graph.proc.set_attack(db2value(arg_num(argv[iarg])));
+      dvd_graph.proc.set_attack(db2value(arg.as_double()));
       continue;
     }
 
     // -release
-    if (is_arg(argv[iarg], "release", argt_num))
+    if (arg.is_option("release", argt_double))
     {
-      dvd_graph.proc.set_release(db2value(arg_num(argv[iarg])));
+      dvd_graph.proc.set_release(db2value(arg.as_double()));
       continue;
     }
 
@@ -507,24 +519,16 @@ int valdec(int argc, const char *argv[])
     ///////////////////////////////////////////////////////
 
     // -delay
-    if (is_arg(argv[iarg], "delay", argt_bool))
+    if (arg.is_option("delay", argt_bool))
     {
-      dvd_graph.proc.set_delay(arg_bool(argv[iarg]));
+      dvd_graph.proc.set_delay(arg.as_bool());
       continue;
     }
 
     // -delay_units
-    if (is_arg(argv[iarg], "delay_units", argt_num))
+    if (arg.is_option("delay_units", argt_enum))
     {
-      switch (int(arg_num(argv[iarg])))
-      {
-        case 0: delay_units = DELAY_SP;
-        case 1: delay_units = DELAY_MS;
-        case 2: delay_units = DELAY_M;
-        case 3: delay_units = DELAY_CM;
-        case 4: delay_units = DELAY_FT;
-        case 5: delay_units = DELAY_IN;
-      }
+      delay_units = arg.choose(delay_units_tbl, array_size(delay_units_tbl));
       continue;
     }
 
@@ -533,15 +537,15 @@ int valdec(int argc, const char *argv[])
     for (i = 0; i < array_size(ch_map) && !have_delay; i++)
     {
       string opt = string("delay_") + string(ch_map[i].name);
-      if (is_arg(argv[iarg], opt.c_str(), argt_num))
+      if (arg.is_option(opt, argt_double))
       {
-        delays[ch_map[i].ch] = float(arg_num(argv[iarg]));
+        delays[ch_map[i].ch] = float(arg.as_double());
         have_delay = true;
       }
     }
     if (have_delay) continue;
 
-    printf("Error: unknown option: %s\n", argv[iarg]);
+    printf("Error: unknown option: %s\n", arg.raw.c_str());
     return 1;
   }
 
@@ -830,11 +834,16 @@ int main(int argc, const char *argv[])
 {
   try
   {
-    return valdec(argc, argv);
+    return valdec(args_utf8(argc, argv));
   }
   catch (ValibException &e)
   {
     printf("Processing error: %s\n", boost::diagnostic_information(e).c_str());
+    return -1;
+  }
+  catch (arg_t::bad_value_e &e)
+  {
+    printf("Bad argument value: %s", e.arg.c_str());
     return -1;
   }
   return 0;

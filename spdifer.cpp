@@ -13,6 +13,7 @@
 #include "sink/sink_raw.h"
 #include "sink/sink_wav.h"
 #include "vtime.h"
+#include "vargs.h"
 
 #include "spdifer_usage.txt.h"
 
@@ -20,7 +21,7 @@
 // Main
 ///////////////////////////////////////////////////////////////////////////////
 
-int spdifer_proc(int argc, const char **argv)
+int spdifer_proc(const arg_list_t &args)
 {
   bool stat = true;  // display statistics
 
@@ -30,7 +31,7 @@ int spdifer_proc(int argc, const char **argv)
   WAVSink   wav;
   Sink     *sink;
 
-  if (argc < 3)
+  if (args.size() < 3 || args.size() > 4)
   {
     printf(usage);
     return 0;
@@ -39,14 +40,16 @@ int spdifer_proc(int argc, const char **argv)
   /////////////////////////////////////////////////////////
   // Parse command line
 
-  const char *input_filename = argv[1];
-  const char *output_filename = argv[2];
+  const char *input_filename = args[1].raw.c_str();
+  const char *output_filename = args[2].raw.c_str();
   enum { mode_raw, mode_wav } mode = mode_raw;
 
-  if (argc > 3)
+  if (args.size() > 3)
   {
-    if (!strcmp(argv[3], "-raw")) mode = mode_raw;
-    if (!strcmp(argv[3], "-wav")) mode = mode_wav;
+    if (args[3].is_option("raw", argt_exist))
+      mode = mode_raw;
+    if (args[3].is_option("wav", argt_exist))
+      mode = mode_wav;
   }
 
   /////////////////////////////////////////////////////////
@@ -191,11 +194,16 @@ int main(int argc, const char *argv[])
 {
   try
   {
-    return spdifer_proc(argc, argv);
+    return spdifer_proc(args_utf8(argc, argv));
   }
   catch (ValibException &e)
   {
     printf("Processing error: %s\n", boost::diagnostic_information(e).c_str());
+    return -1;
+  }
+  catch (arg_t::bad_value_e &e)
+  {
+    printf("Bad argument value: %s", e.arg.c_str());
     return -1;
   }
   return 0;

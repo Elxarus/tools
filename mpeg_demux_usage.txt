@@ -7,8 +7,8 @@ Usage:
   -i - file info (default)
   -d - demux to elementary stream
   -p - demux to pes stream
-  -s=xx  - demux stream xx (hex)
-  -ss=xx - demux substream xx (hex)
+  -s=xx  - demux stream xx. Use '0x' prefix for hex values.
+  -ss=xx - demux substream xx. Use '0x' prefix for hex values.
 
 Note: if stream/substream is not specified, demuxer will dump contents of all
 packets found. This mode is useful to demux PES streams (not multiplexed) even

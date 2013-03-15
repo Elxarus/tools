@@ -8,14 +8,15 @@
 #include "source/file_parser.h"
 #include "source/source_filter.h"
 #include "bsconvert_usage.txt.h"
+#include "vargs.h"
 
 inline const char *bs_name(int bs_type);
 inline bool is_14bit(int bs_type)
 { return bs_type == BITSTREAM_14LE || bs_type == BITSTREAM_14BE; }
 
-int bsconvert_proc(int argc, const char **argv)
+int bsconvert_proc(const arg_list_t &args)
 {
-  if (argc < 2)
+  if (args.size() < 2)
   {
     printf(usage);
     return -1;
@@ -28,31 +29,31 @@ int bsconvert_proc(int argc, const char **argv)
   const char *out_filename = 0;
   int bs_type = BITSTREAM_8;
 
-  switch (argc)
+  switch (args.size())
   {
   case 2:
-    in_filename = argv[1];
+    in_filename = args[1].raw.c_str();
     break;
 
   case 3:
-    in_filename = argv[1];
-    out_filename = argv[2];
+    in_filename = args[1].raw.c_str();
+    out_filename = args[2].raw.c_str();
     break;
 
   case 4:
-    in_filename = argv[1];
-    out_filename = argv[2];
-    if (!strcmp(argv[3], "8"))
+    in_filename = args[1].raw.c_str();
+    out_filename = args[2].raw.c_str();
+    if (args[3].raw == "8")
       bs_type = BITSTREAM_8;
-    else if (!strcmp(argv[3], "16le"))
+    else if (args[3].raw == "16le")
       bs_type = BITSTREAM_16LE;
-    else if (!strcmp(argv[3], "14be"))
+    else if (args[3].raw == "14be")
       bs_type = BITSTREAM_14BE;
-    else if (!strcmp(argv[3], "14le"))
+    else if (args[3].raw == "14le")
       bs_type = BITSTREAM_14LE;
     else
     {
-      printf("Error: Unknown stream format: %s\n", argv[3]);
+      printf("Error: Unknown stream format: %s\n", args[3].raw.c_str());
       return -1;
     }
     break;
@@ -199,7 +200,7 @@ int main(int argc, const char *argv[])
 {
   try
   {
-    return bsconvert_proc(argc, argv);
+    return bsconvert_proc(args_utf8(argc, argv));
   }
   catch (ValibException &e)
   {
