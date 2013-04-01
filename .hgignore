@@ -12,3 +12,6 @@ Release
 *.dep
 *.suo
 *.user
+
+# Config
+cmd/config.cmd
