@@ -20,10 +20,10 @@ Options:
     -n[othing] - do nothing (to be used with -i option)
   
   output options:
-    -spk:{layout} - :
-      Defines output channel layout. You may choose a predefined layout and/or
-      specify each channel individually with several -spk options. When layout
-      is not set, output layout will match the input layout.
+    -spk:{layout} - define output channel layout
+      You may choose a predefined layout and/or specify each channel
+      individually with several -spk options. When layout is not set, output
+      layout will match the input layout.
 
       Predefined channel layouts:
           mono    c
