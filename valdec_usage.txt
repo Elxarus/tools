@@ -18,7 +18,7 @@ Options:
     -r[aw] file.raw - decode to RAW file
     -w[av] file.wav - decode to WAV file
     -n[othing] - do nothing (to be used with -i option)
-  
+
   output options:
     -spk:{layout} - define output channel layout
       You may choose a predefined layout and/or specify each channel
@@ -67,16 +67,25 @@ Options:
     -rate:N - set output sample rate.
       If set, valdec will do sample rate conversion to the rate specified
       (if nessesary).
-  
+
   format selection:
     -ac3 - force ac3 (do not autodetect format)
     -dts - force dts (do not autodetect format)
     -mpa - force mpa (do not autodetect format)
-  
+
   info:
-    -i    - print bitstream info
-    -hist - print levels histogram
-  
+    -i     - print bitstream info
+    -hist  - print levels histogram
+    -log logfile - dump processing log to a file
+    -log_level:level - maximum level for log events:
+      critical  - critical error, so program cannot continue
+      exception - exceptions
+      error     - 'normal' errors (file open, resource allocation, etc)
+      warning   - event that require special attention.
+      event     - important event happen during execution
+      trace     - informational event
+      all (*)   - log everything
+
   mixer options:
     -auto_matrix[+|-] - automatic matrix calculation on(*)/off
     -normalize_matrix[+|-] - normalize matrix on(*)/off
@@ -89,7 +98,7 @@ Options:
     -gain_{ch}:N - output channel gain (dB)
     -{in}_{out}:N - factor (not dB!) for a matrix cell at input channel {in}
           and output channels {out}. Effective only when auto_matrix is off.
-  
+
   automatic gain control options:
     -agc[+|-] - auto gain control on(*)/off
     -normalize[+|-] - one-pass normalize on/off(*)
@@ -97,18 +106,18 @@ Options:
     -drc_power:N - dynamic range compression level (dB)
     -attack:N - attack speed (dB/s)
     -release:N - release speed (dB/s)
-  
+
   delay options:
     -delay_units:n - units in wich delay values are given:
       (*) s  - samples       m  - meters       ft - feet  
           ms - milliseconds  cm - centimeters  in - inches
-                               
+
       Backwards compatibility:
           0 - samples        2 - meters        4 - feet   
           1 - milliseconds   3 - centimeters   5 - inches 
 
     -delay_{ch}:N - delay for channel {ch} (in samples by default) 
-  
+
   Channel names used at some parameters:
     l  - front left       bl - back left
     c  - front center     bc - back center

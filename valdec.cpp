@@ -24,6 +24,7 @@
 // other
 #include "win32/cpu.h"
 #include "vargs.h"
+#include "log.h"
 
 #include "valdec_usage.txt.h"
 
@@ -63,6 +64,7 @@ const enum_opt mask_tbl[] =
   { "cl",     CH_MASK_CL },
   { "cr",     CH_MASK_CR },
   { "lfe",    CH_MASK_LFE },
+
   // Backwards compatibility
   { "0",      0 },
   { "1",      MODE_MONO },
@@ -83,6 +85,7 @@ const enum_opt format_tbl[] =
   { "pcm32be", FORMAT_PCM32_BE },
   { "pcm_float",  FORMAT_PCMFLOAT },
   { "pcm_double", FORMAT_PCMDOUBLE },
+
   // Backwards compatibility
   { "0", FORMAT_PCM16 },
   { "1", FORMAT_PCM24 },
@@ -112,6 +115,17 @@ const enum_opt delay_units_tbl[] =
   { "5", DELAY_IN },
 };
 
+const enum_opt log_level_tbl[] =
+{
+  { "critical",  log_critical  },
+  { "exception", log_exception },
+  { "error",     log_error     },
+  { "warning",   log_warning   },
+  { "event",     log_event     },
+  { "trace",     log_trace     },
+  { "all",       log_all       },
+};
+
 int valdec(const arg_list_t &args)
 {
   using std::string;
@@ -125,6 +139,11 @@ int valdec(const arg_list_t &args)
   bool print_info = false;
   bool print_opt  = false;
   bool print_hist = false;
+
+  /////////////////////////////////////////////////////////
+  // Processing log
+
+  LogFile logfile;
 
   /////////////////////////////////////////////////////////
   // Input file
@@ -377,6 +396,29 @@ int valdec(const arg_list_t &args)
     if (arg.is_option("hist", argt_exist))
     {
       print_hist = true;
+      continue;
+    }
+
+    // -log dump processing log to a file
+    if (arg.is_option("log", argt_exist))
+    {
+      if (args.size() - iarg < 1)
+      {
+        printf("-log : specify a file name\n");
+        return 1;
+      }
+
+      const char *log_filename = args[++iarg].raw.c_str();
+      logfile.open(log_filename);
+      logfile.subscribe(&valib_log_dispatcher);
+      continue;
+    }
+
+    // -log_level
+    if (arg.is_option("log_level", argt_enum))
+    {
+      int level = arg.choose(log_level_tbl, array_size(log_level_tbl));
+      logfile.set_max_log_level(level);
       continue;
     }
 
