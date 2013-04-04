@@ -1,6 +1,6 @@
 Noise generator
 This utility is part of AC3Filter project (http://ac3filter.net)
-Copyright (c) 2007-2012 by Alexander Vigovsky
+Copyright (c) 2007-2013 by Alexander Vigovsky
 
 Usage:
   nosie ms [options]

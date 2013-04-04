@@ -6,7 +6,7 @@ const char *usage =
 "stream type to the most common byte stream.\n"
 "\n"
 "This utility is a part of AC3Filter project (http://ac3filter.net)\n"
-"Copyright (c) 2007-2011 by Alexander Vigovsky\n"
+"Copyright (c) 2007-2013 by Alexander Vigovsky\n"
 "\n"
 "Usage:\n"
 "  Detect file type and print file information:\n"

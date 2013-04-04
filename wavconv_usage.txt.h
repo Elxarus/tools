@@ -5,7 +5,7 @@ const char *usage =
 "type and cut a part of a wave.\n"
 "\n"
 "This utility is a part of AC3Filter project (http://ac3filter.net)\n"
-"Copyright (c) 2008-2012 by Alexander Vigovsky\n"
+"Copyright (c) 2008-2013 by Alexander Vigovsky\n"
 "\n"
 "Usage:\n"
 "  > wavconv input.wav output.wav [options]\n"

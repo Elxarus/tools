@@ -2,7 +2,7 @@ Gain
 ====
 Simple gain tool to amplify or attenuate an audio file.
 This utility is a part of AC3Filter project (http://ac3filter.net)
-Copyright (c) 2008-2012 by Alexander Vigovsky
+Copyright (c) 2008-2013 by Alexander Vigovsky
 
 Usage:
   > gain input.wav output.wav [-g[ain]:n]

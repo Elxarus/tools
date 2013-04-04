@@ -3,7 +3,7 @@ const char *usage =
 "======\n"
 "Simple parametric audio filter\n"
 "This utility is a part of AC3Filter project (http://ac3filter.net)\n"
-"Copyright (c) 2008-2012 by Alexander Vigovsky\n"
+"Copyright (c) 2008-2013 by Alexander Vigovsky\n"
 "\n"
 "Usage:\n"
 "  > filter input.wav output.wav -<type> -f:n [-f2:n] -df:n [-a:n] [-norm]\n"

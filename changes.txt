@@ -1,5 +1,5 @@
 v1.0a
-  * Built on AC3Filter 2.5 code base
+  * Built on AC3Filter 2.6b code base
   * Unicode file names support
   + wavconv utility: converts sample rate, bitdepth, cuts a wav file.
 

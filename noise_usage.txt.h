@@ -1,7 +1,7 @@
 const char *usage =
 "Noise generator\n"
 "This utility is part of AC3Filter project (http://ac3filter.net)\n"
-"Copyright (c) 2007-2012 by Alexander Vigovsky\n"
+"Copyright (c) 2007-2013 by Alexander Vigovsky\n"
 "\n"
 "Usage:\n"
 "  nosie ms [options]\n"
