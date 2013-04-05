@@ -12,7 +12,7 @@ set src_arc=ac3filter_tools_%ver_file%_src.zip
 set src_files=tools\*.* valib\*.*
 
 set bin_arc=ac3filter_tools_%ver_file%.zip
-set bin_files=tools\Release\*.exe tools\*.txt
+set bin_files=tools\Release\*.exe tools\GPL.txt tools\changes.txt tools\readme.txt
 
 set bin64_arc=ac3filter_tools_%ver_file%_x64.zip
 set bin64_files=tools\x64\Release\*.exe tools\*.txt
