@@ -28,7 +28,7 @@ int wavconv_proc(const arg_list_t &args)
 {
   if (args.size() < 3)
   {
-    printf(usage);
+    fprintf(stderr, usage);
     return -1;
   }
 
@@ -95,7 +95,7 @@ int wavconv_proc(const arg_list_t &args)
       continue;
     }
 
-    printf("Error: unknown option: %s\n", arg.raw.c_str());
+    fprintf(stderr, "Error: unknown option: %s\n", arg.raw.c_str());
     return -1;
   }
 
@@ -105,14 +105,14 @@ int wavconv_proc(const arg_list_t &args)
   WAVSource source(input_filename, chunk_size);
   if (!source.is_open())
   {
-    printf("Error: cannot open file: %s\n", input_filename);
+    fprintf(stderr, "Error: cannot open file: %s\n", input_filename);
     return -1;
   }
 
   WAVSink sink;
   if (!sink.open_file(output_filename))
   {
-    printf("Error: cannot open file: %s\n", output_filename);
+    fprintf(stderr, "Error: cannot open file: %s\n", output_filename);
     return -1;
   }
 
@@ -171,17 +171,17 @@ int wavconv_proc(const arg_list_t &args)
 
   if (!chain.open(spk))
   {
-    printf("Cannot start processing input: %s", spk.print().c_str());
+    fprintf(stderr, "Cannot start processing input: %s", spk.print().c_str());
     return -1;
   }
 
   if (!sink.open(out_spk))
   {
-    printf("Cannot open output WAV file with format %s", out_spk.print().c_str());
+    fprintf(stderr, "Cannot open output WAV file with format %s", out_spk.print().c_str());
     return -1;
   }
 
-  printf("0%%\r");
+  fprintf(stderr, "0%%\r");
 
   Chunk in_chunk, out_chunk;
   vtime_t t = local_time() + 0.1;
@@ -197,7 +197,7 @@ int wavconv_proc(const arg_list_t &args)
     {
       t += 0.1;
       double pos = double(source.pos()) * 100 / source.size();
-      printf("%i%%\r", (int)pos);
+      fprintf(stderr, "%i%%\r", (int)pos);
     }
   }
 
@@ -206,7 +206,7 @@ int wavconv_proc(const arg_list_t &args)
 
   sink.flush();
 
-  printf("100%%\n");
+  fprintf(stderr, "100%%\n");
   return 0;
 }
 
@@ -218,12 +218,12 @@ int main(int argc, const char *argv[])
   }
   catch (ValibException &e)
   {
-    printf("Processing error: %s\n", boost::diagnostic_information(e).c_str());
+    fprintf(stderr, "Processing error: %s\n", boost::diagnostic_information(e).c_str());
     return -1;
   }
   catch (arg_t::bad_value_e &e)
   {
-    printf("Bad argument value: %s", e.arg.c_str());
+    fprintf(stderr, "Bad argument value: %s", e.arg.c_str());
     return -1;
   }
   return 0;

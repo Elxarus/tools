@@ -31,7 +31,7 @@ int main(int argc, char *argv[])
 {
   if (argc < 2)
   {
-    printf(usage);
+    fprintf(stderr, usage);
     return 0;
   }
 
@@ -46,7 +46,7 @@ int main(int argc, char *argv[])
 
   if (CreateProcess(0, command_line, 0, 0, TRUE, CREATE_SUSPENDED, 0, 0, &si, &pi) == 0)
   {
-    printf("Cannot start the program\n");
+    fprintf(stderr, "Cannot start the program\n");
     return -1;
   }
   WaitForInputIdle(pi.hProcess, INFINITE);
@@ -60,8 +60,8 @@ int main(int argc, char *argv[])
   process_time = get_process_time(pi.hProcess) - process_time;
   system_time = get_system_time() - system_time;
 
-  printf("--------------------\n");
-  printf("Process time: %ims\n", int(process_time / 10000));
-  printf("System time: %ims\n", int(system_time / 10000));
+  fprintf(stderr, "--------------------\n");
+  fprintf(stderr, "Process time: %ims\n", int(process_time / 10000));
+  fprintf(stderr, "System time: %ims\n", int(system_time / 10000));
   return int(process_time / 10000);
 }

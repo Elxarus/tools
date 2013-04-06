@@ -15,7 +15,7 @@ int gain_proc(const arg_list_t &args)
 {
   if (args.size() < 3)
   {
-    printf(usage);
+    fprintf(stderr, usage);
     return 0;
   }
 
@@ -38,7 +38,7 @@ int gain_proc(const arg_list_t &args)
       continue;
     }
 
-    printf("Error: unknown option: %s\n", arg.raw.c_str());
+    fprintf(stderr, "Error: unknown option: %s\n", arg.raw.c_str());
     return -1;
   }
 
@@ -48,21 +48,21 @@ int gain_proc(const arg_list_t &args)
   WAVSource src(input_filename, block_size);
   if (!src.is_open())
   {
-    printf("Error: cannot open file '%s'\n", input_filename);
+    fprintf(stderr, "Error: cannot open file '%s'\n", input_filename);
     return -1;
   }
 
   WAVSink sink(output_filename);
   if (!sink.is_file_open())
   {
-    printf("Error: cannot open file for writing '%s'\n", output_filename);
+    fprintf(stderr, "Error: cannot open file for writing '%s'\n", output_filename);
     return -1;
   }
 
   Speakers spk = src.get_output();
   if (!sink.open(spk))
   {
-    printf("Error: cannot write wav of format %s\n", spk.print().c_str());
+    fprintf(stderr, "Error: cannot write wav of format %s\n", spk.print().c_str());
     return -1;
   }
 
@@ -86,14 +86,14 @@ int gain_proc(const arg_list_t &args)
 
   if (!chain.open(spk))
   {
-    printf("Error: cannot start processing\n");
+    fprintf(stderr, "Error: cannot start processing\n");
     return -1;
   }
 
   /////////////////////////////////////////////////////////////////////////////
   // Do the job
 
-  printf("0%%\r");
+  fprintf(stderr, "0%%\r");
 
   Chunk in_chunk, out_chunk;
   vtime_t t = local_time() + 0.1;
@@ -109,7 +109,7 @@ int gain_proc(const arg_list_t &args)
     {
       t += 0.1;
       double pos = double(src.pos()) * 100 / src.size();
-      printf("%i%%\r", (int)pos);
+      fprintf(stderr, "%i%%\r", (int)pos);
     }
   }
 
@@ -118,7 +118,7 @@ int gain_proc(const arg_list_t &args)
 
   sink.flush();
 
-  printf("100%%\n");
+  fprintf(stderr, "100%%\n");
   return 0;
 }
 
@@ -130,12 +130,12 @@ int main(int argc, const char *argv[])
   }
   catch (ValibException &e)
   {
-    printf("Processing error: %s\n", boost::diagnostic_information(e).c_str());
+    fprintf(stderr, "Processing error: %s\n", boost::diagnostic_information(e).c_str());
     return -1;
   }
   catch (arg_t::bad_value_e &e)
   {
-    printf("Bad argument value: %s", e.arg.c_str());
+    fprintf(stderr, "Bad argument value: %s", e.arg.c_str());
     return -1;
   }
   return 0;

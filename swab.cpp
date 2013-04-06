@@ -20,7 +20,7 @@ int main(int argc, const char *argv[])
 
   if (args.size() < 3)
   {
-    printf(usage);
+    fprintf(stderr, usage);
     return -1;
   }
 
@@ -33,14 +33,14 @@ int main(int argc, const char *argv[])
   AutoFile in_file(in_filename);
   if (!in_file.is_open())
   {
-    printf("Cannot open file %s", in_filename);
+    fprintf(stderr, "Cannot open file %s", in_filename);
     return -1;
   }
 
   AutoFile out_file(out_filename, "wb");
   if (!out_file.is_open())
   {
-    printf("Cannot open file %s\n", out_filename);
+    fprintf(stderr, "Cannot open file %s\n", out_filename);
     return -1;
   }
 

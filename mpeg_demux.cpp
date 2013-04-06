@@ -63,12 +63,12 @@ void info(FILE *f)
         if (!stream[ps.stream])
         {
           stream[ps.stream]++;
-          printf("Found stream %x (%s)      \n", ps.stream, stream_type(ps.stream));
+          fprintf(stderr, "Found stream %x (%s)      \n", ps.stream, stream_type(ps.stream));
         }
         if (ps.stream == 0xBD && !substream[ps.substream])
         {
           substream[ps.substream]++;
-          printf("Found substream %x (%s)   \n", ps.substream, substream_type(ps.substream));
+          fprintf(stderr, "Found substream %x (%s)   \n", ps.substream, substream_type(ps.substream));
         }
 
         size_t len = MIN(ps.payload_size, size_t(end - data));
@@ -81,7 +81,7 @@ void info(FILE *f)
   }
 
   if (ps.errors)
-    printf("Stream contains errors (not a MPEG program stream?)\n");
+    fprintf(stderr, "Stream contains errors (not a MPEG program stream?)\n");
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -167,22 +167,22 @@ void demux(FILE *f, FILE *out, int stream, int substream, bool pes)
 
       int eta = int((float(file_size) / processed - 1.0) * elapsed);
 
-      printf("%02i:%02i %02i%% In: %iM (%2iMB/s) Out: %iK    ", 
+      fprintf(stderr, "%02i:%02i %02i%% In: %iM (%2iMB/s) Out: %iK    ", 
         eta / 60, eta % 60,
         int(processed * 100 / float(file_size)),
         in_pos / 1000000, int(processed/elapsed/1000000), out_pos / 1000);
 
       if (stream? substream: ps.substream)
-        printf(" stream:%02x/%02x\r", stream? stream: ps.stream, stream? substream: ps.substream);
+        fprintf(stderr, " stream:%02x/%02x\r", stream? stream: ps.stream, stream? substream: ps.substream);
       else
-        printf(" stream:%02x   \r", stream? stream: ps.stream);
+        fprintf(stderr, " stream:%02x   \r", stream? stream: ps.stream);
     }
   }
 
-  printf("\n");
+  fprintf(stderr, "\n");
 
   if (ps.errors)
-    printf("Stream contains errors (not a MPEG program stream?)\n");
+    fprintf(stderr, "Stream contains errors (not a MPEG program stream?)\n");
 
 };
 
@@ -203,7 +203,7 @@ int mpeg_demux(const arg_list_t &args)
 
   if (args.size() < 2)
   {
-    printf(usage);
+    fprintf(stderr, usage);
     return -1;
   }
 
@@ -220,7 +220,7 @@ int mpeg_demux(const arg_list_t &args)
     {
       if (mode != mode_none)
       {
-        printf("-i : ambiguous mode\n");
+        fprintf(stderr, "-i : ambiguous mode\n");
         return 1;
       }
 
@@ -233,12 +233,12 @@ int mpeg_demux(const arg_list_t &args)
     {
       if (args.size() - iarg < 2)
       {
-        printf("-d : specify a file name\n");
+        fprintf(stderr, "-d : specify a file name\n");
         return 1;
       }
       if (mode != mode_none)
       {
-        printf("-d : ambiguous mode\n");
+        fprintf(stderr, "-d : ambiguous mode\n");
         return 1;
       }
 
@@ -252,12 +252,12 @@ int mpeg_demux(const arg_list_t &args)
     {
       if (args.size() - iarg < 2)
       {
-        printf("-p : specify a file name\n");
+        fprintf(stderr, "-p : specify a file name\n");
         return 1;
       }
       if (mode != mode_none)
       {
-        printf("-p : ambiguous mode\n");
+        fprintf(stderr, "-p : ambiguous mode\n");
         return 1;
       }
 
@@ -280,7 +280,7 @@ int mpeg_demux(const arg_list_t &args)
       continue;
     }
 
-    printf("Unknown parameter: %s\n", arg.raw.c_str());
+    fprintf(stderr, "Unknown parameter: %s\n", arg.raw.c_str());
     return 1;
   }
 
@@ -288,7 +288,7 @@ int mpeg_demux(const arg_list_t &args)
   {
     if (stream && stream != 0xbd)
     {
-      printf("Cannot demux substreams for stream 0x%x\n", stream);
+      fprintf(stderr, "Cannot demux substreams for stream 0x%x\n", stream);
       return 1;
     }
     stream = 0xbd;
@@ -296,14 +296,14 @@ int mpeg_demux(const arg_list_t &args)
 
   if (!(f = fopen(filename, "rb")))
   {
-    printf("Cannot open file %s for reading\n", filename);
+    fprintf(stderr, "Cannot open file %s for reading\n", filename);
     return 1;
   }
 
   if (filename_out)
     if (!(out = fopen(filename_out, "wb")))
     {
-      printf("Cannot open file %s for writing\n", filename_out);
+      fprintf(stderr, "Cannot open file %s for writing\n", filename_out);
       return 1;
     }
 
@@ -340,7 +340,7 @@ int main(int argc, const char *argv[])
   }
   catch (arg_t::bad_value_e &e)
   {
-    printf("Bad argument value: %s", e.arg.c_str());
+    fprintf(stderr, "Bad argument value: %s", e.arg.c_str());
     return -1;
   }
   return 0;

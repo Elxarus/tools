@@ -17,7 +17,7 @@ int wavdiff(const arg_list_t &args)
 {
   if (args.size() < 3)
   {
-    printf(usage);
+    fprintf(stderr, usage);
     return -1;
   }
 
@@ -63,7 +63,7 @@ int wavdiff(const arg_list_t &args)
     {
       if (args.size() - iarg < 1)
       {
-        printf("-diff : specify a file name\n");
+        fprintf(stderr, "-diff : specify a file name\n");
         return 1;
       }
 
@@ -71,11 +71,11 @@ int wavdiff(const arg_list_t &args)
       continue;
     }
 
-    printf("Error: unknown option: %s\n", arg.raw.c_str());
+    fprintf(stderr, "Error: unknown option: %s\n", arg.raw.c_str());
     return -1;
   }
 
-  printf("Comparing %s - %s...\n", filename1, filename2);
+  fprintf(stderr, "Comparing %s - %s...\n", filename1, filename2);
 
   /////////////////////////////////////////////////////////////////////////////
   // Open files
@@ -83,14 +83,14 @@ int wavdiff(const arg_list_t &args)
   WAVSource f1(filename1, block_size);
   if (!f1.is_open())
   {
-    printf("Error: cannot open file: %s\n", filename1);
+    fprintf(stderr, "Error: cannot open file: %s\n", filename1);
     return -1;
   }
 
   WAVSource f2(filename2, block_size);
   if (!f2.is_open())
   {
-    printf("Error: cannot open file: %s\n", filename2);
+    fprintf(stderr, "Error: cannot open file: %s\n", filename2);
     return -1;
   }
 
@@ -99,7 +99,7 @@ int wavdiff(const arg_list_t &args)
   {
     if (!f_diff.open_file(diff_filename))
     {
-      printf("Error: cannot open file: %s\n", diff_filename);
+      fprintf(stderr, "Error: cannot open file: %s\n", diff_filename);
       return -1;
     }
   }
@@ -120,12 +120,12 @@ int wavdiff(const arg_list_t &args)
 
   if (spk1.nch() != spk2.nch())
   {
-    printf("Error: different number of channels\n");
+    fprintf(stderr, "Error: different number of channels\n");
     return -1;
   }
   if (spk1.sample_rate != spk2.sample_rate)
   {
-    printf("Error: different sample rates\n");
+    fprintf(stderr, "Error: different sample rates\n");
     return -1;
   }
 
@@ -145,17 +145,17 @@ int wavdiff(const arg_list_t &args)
 
   if (!conv1.open(spk1))
   {
-    printf("Error: unsupported file type: %s\n", filename1);
+    fprintf(stderr, "Error: unsupported file type: %s\n", filename1);
     return -1;
   }
   if (!conv2.open(spk2))
   {
-    printf("Error: unsupported file type: %s\n", filename2);
+    fprintf(stderr, "Error: unsupported file type: %s\n", filename2);
     return -1;
   }
   if (diff_filename && !sink_diff.open(src1.get_output()))
   {
-    printf("Cannot open output file %s with type %s\n", diff_filename, spk_diff.print().c_str());
+    fprintf(stderr, "Cannot open output file %s with type %s\n", diff_filename, spk_diff.print().c_str());
     return -1;
   }
 
@@ -231,7 +231,7 @@ int wavdiff(const arg_list_t &args)
     {
       t += 0.1;
       double pos = double(f1.pos()) * 100 / f1.size();
-      printf("%i%%\r", (int)pos);
+      fprintf(stderr, "%i%%\r", (int)pos);
     }
 
   } // while (1)
@@ -242,25 +242,25 @@ int wavdiff(const arg_list_t &args)
   rms = sqrt(rms/n);
   mean /= n;
 
-  printf("    \r");
-  printf("Max diff: %gdB\n", value2db(diff));
-  printf("RMS diff: %gdB\n", value2db(rms));
-  printf("Mean diff: %gdB\n", value2db(mean));
+  fprintf(stderr, "    \r");
+  fprintf(stderr, "Max diff: %gdB\n", value2db(diff));
+  fprintf(stderr, "RMS diff: %gdB\n", value2db(rms));
+  fprintf(stderr, "Mean diff: %gdB\n", value2db(mean));
 
   int result = 0;
   if (check_diff && diff > db2value(max_diff))
   {
-    printf("Error: maximum difference is too large");
+    fprintf(stderr, "Error: maximum difference is too large");
     result = -1;
   }
   if (check_rms && rms > db2value(max_rms))
   {
-    printf("Error: RMS difference is too large");
+    fprintf(stderr, "Error: RMS difference is too large");
     result = -1;
   }
   if (check_mean && mean > db2value(max_mean))
   {
-    printf("Error: mean difference is too large");
+    fprintf(stderr, "Error: mean difference is too large");
     result = -1;
   }
 
@@ -275,12 +275,12 @@ int main(int argc, const char *argv[])
   }
   catch (ValibException &e)
   {
-    printf("Processing error: %s\n", boost::diagnostic_information(e).c_str());
+    fprintf(stderr, "Processing error: %s\n", boost::diagnostic_information(e).c_str());
     return -1;
   }
   catch (arg_t::bad_value_e &e)
   {
-    printf("Bad argument value: %s", e.arg.c_str());
+    fprintf(stderr, "Bad argument value: %s", e.arg.c_str());
     return -1;
   }
   return 0;

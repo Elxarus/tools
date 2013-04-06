@@ -33,7 +33,7 @@ int spdifer_proc(const arg_list_t &args)
 
   if (args.size() < 3 || args.size() > 4)
   {
-    printf(usage);
+    fprintf(stderr, usage);
     return 0;
   }
 
@@ -106,17 +106,17 @@ int spdifer_proc(const arg_list_t &args)
     if (file.new_stream())
     {
       Speakers new_spk = file.get_output();
-      printf("Input stream found: %s\n", new_spk.print().c_str());
+      fprintf(stderr, "Input stream found: %s\n", new_spk.print().c_str());
 
       while (spdifer.flush(out_chunk))
       {
         if (spdifer.new_stream())
         {
           Speakers new_spk = spdifer.get_output();
-          printf("Opening output stream: %s\n", new_spk.print().c_str());
+          fprintf(stderr, "Opening output stream: %s\n", new_spk.print().c_str());
           if (!sink->open(new_spk))
           {
-            printf("Error: cannot open sink\n");
+            fprintf(stderr, "Error: cannot open sink\n");
             return -1;
           }
         }
@@ -126,7 +126,7 @@ int spdifer_proc(const arg_list_t &args)
 
       if (!spdifer.open(new_spk))
       {
-        printf("Error: cannot process this format\n");
+        fprintf(stderr, "Error: cannot process this format\n");
         return -1;
       }
       streams++;
@@ -137,10 +137,10 @@ int spdifer_proc(const arg_list_t &args)
       if (spdifer.new_stream())
       {
         Speakers new_spk = spdifer.get_output();
-        printf("Opening output stream: %s\n", new_spk.print().c_str());
+        fprintf(stderr, "Opening output stream: %s\n", new_spk.print().c_str());
         if (!sink->open(new_spk))
         {
-          printf("Error: cannot open sink\n");
+          fprintf(stderr, "Error: cannot open sink\n");
           return -1;
         }
       }
@@ -170,10 +170,10 @@ int spdifer_proc(const arg_list_t &args)
     if (spdifer.new_stream())
     {
       Speakers new_spk = spdifer.get_output();
-      printf("Opening output stream: %s\n", new_spk.print().c_str());
+      fprintf(stderr, "Opening output stream: %s\n", new_spk.print().c_str());
       if (!sink->open(new_spk))
       {
-        printf("Error: cannot open sink\n");
+        fprintf(stderr, "Error: cannot open sink\n");
         return -1;
       }
     }
@@ -184,8 +184,8 @@ int spdifer_proc(const arg_list_t &args)
   sink->close();
 
   // Final notes
-  printf("\n");
-  if (streams > 1) printf("%i streams converted\n", streams);
+  fprintf(stderr, "\n");
+  if (streams > 1) fprintf(stderr, "%i streams converted\n", streams);
 
   return 0;
 }
@@ -198,12 +198,12 @@ int main(int argc, const char *argv[])
   }
   catch (ValibException &e)
   {
-    printf("Processing error: %s\n", boost::diagnostic_information(e).c_str());
+    fprintf(stderr, "Processing error: %s\n", boost::diagnostic_information(e).c_str());
     return -1;
   }
   catch (arg_t::bad_value_e &e)
   {
-    printf("Bad argument value: %s", e.arg.c_str());
+    fprintf(stderr, "Bad argument value: %s", e.arg.c_str());
     return -1;
   }
   return 0;

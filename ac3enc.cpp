@@ -13,7 +13,7 @@ int ac3enc(const arg_list_t &args)
 {
   if (args.size() < 3)
   {
-    printf(usage);
+    fprintf(stderr, usage);
     return -1;
   }
 
@@ -35,7 +35,7 @@ int ac3enc(const arg_list_t &args)
        continue;
     }
 
-    printf("Error: unknown option: %s\n", arg.raw.c_str());
+    fprintf(stderr, "Error: unknown option: %s\n", arg.raw.c_str());
     return -1;
   }
 
@@ -46,14 +46,14 @@ int ac3enc(const arg_list_t &args)
   WAVSource src;
   if (!src.open(input_filename, 65536))
   {
-    printf("Error: Cannot open file (not a PCM file?) '%s'\n", input_filename);
+    fprintf(stderr, "Error: Cannot open file (not a PCM file?) '%s'\n", input_filename);
     return -1;
   }
 
   RAWSink sink;
   if (!sink.open_file(output_filename))
   {
-    printf("Error: Cannot open file for writing '%s'\n", output_filename);
+    fprintf(stderr, "Error: Cannot open file for writing '%s'\n", output_filename);
     return -1;
   }
 
@@ -73,18 +73,18 @@ int ac3enc(const arg_list_t &args)
 
   if (!enc.set_bitrate(bitrate*1000))
   {
-    printf("Error: Wrong bitrate %ikbps!\n", bitrate);
+    fprintf(stderr, "Error: Wrong bitrate %ikbps!\n", bitrate);
     return -1;
   }
 
   Speakers spk = src.get_output();
   if (!chain.open(spk))
   {
-    printf("Error: Cannot encode file (%s)!\n", spk.print().c_str());
+    fprintf(stderr, "Error: Cannot encode file (%s)!\n", spk.print().c_str());
     return -1;
   }
-  printf("Input format: %s\n", spk.print().c_str());
-  printf("Output format: AC3 %ikbps\n", bitrate);
+  fprintf(stderr, "Input format: %s\n", spk.print().c_str());
+  fprintf(stderr, "Output format: AC3 %ikbps\n", bitrate);
 
   /////////////////////////////////////////////////////////
   // Process
@@ -139,7 +139,7 @@ int ac3enc(const arg_list_t &args)
   }
 
   ms = double(cpu_total.get_system_time() * 1000);
-  printf("%2.1f%% Frames: %i\tTime: %i:%02i.%03i\tFPS: %i CPU: %.1f%%  \n", 
+  fprintf(stderr, "%2.1f%% Frames: %i\tTime: %i:%02i.%03i\tFPS: %i CPU: %.1f%%  \n", 
     double(src.pos()) * 100.0 / src.size(), 
     frames,
     int(ms/60000), int(ms) % 60000/1000, int(ms) % 1000,
@@ -149,8 +149,8 @@ int ac3enc(const arg_list_t &args)
   cpu_usage.stop();
   cpu_total.stop();
 
-  printf("System time: %ims\n", int(cpu_total.get_system_time() * 1000));
-  printf("Process time: %ims\n", int(cpu_total.get_thread_time() * 1000));
+  fprintf(stderr, "System time: %ims\n", int(cpu_total.get_system_time() * 1000));
+  fprintf(stderr, "Process time: %ims\n", int(cpu_total.get_thread_time() * 1000));
 
   return 0;
 }
@@ -163,12 +163,12 @@ int main(int argc, const char *argv[])
   }
   catch (ValibException &e)
   {
-    printf("Processing error: %s\n", boost::diagnostic_information(e).c_str());
+    fprintf(stderr, "Processing error: %s\n", boost::diagnostic_information(e).c_str());
     return -1;
   }
   catch (arg_t::bad_value_e &e)
   {
-    printf("Bad argument value: %s", e.arg.c_str());
+    fprintf(stderr, "Bad argument value: %s", e.arg.c_str());
     return -1;
   }
   return 0;

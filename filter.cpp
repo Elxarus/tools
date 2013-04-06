@@ -16,7 +16,7 @@ int filter_proc(const arg_list_t &args)
 {
   if (args.size() < 3)
   {
-    printf(usage);
+    fprintf(stderr, usage);
     return 0;
   }
 
@@ -104,7 +104,7 @@ int filter_proc(const arg_list_t &args)
       continue;
     }
 
-    printf("Error: unknown option: %s\n", arg.raw.c_str());
+    fprintf(stderr, "Error: unknown option: %s\n", arg.raw.c_str());
     return -1;
   }
 
@@ -113,25 +113,25 @@ int filter_proc(const arg_list_t &args)
 
   if (type == -1)
   {
-    printf("Please, specify the filter type\n");
+    fprintf(stderr, "Please, specify the filter type\n");
     return -1;
   }
 
   if (f == 0)
   {
-    printf("Please, specify the filter frequency with -f option\n");
+    fprintf(stderr, "Please, specify the filter frequency with -f option\n");
     return -1;
   }
 
   if (type == ParamFIR::band_pass || type == ParamFIR::band_stop) if (f2 == 0)
   {
-    printf("Please, specify the second bound frequency with -f2 option\n");
+    fprintf(stderr, "Please, specify the second bound frequency with -f2 option\n");
     return -1;
   }
 
   if (df == 0)
   {
-    printf("Please, specify the trnasition band width with -df option\n");
+    fprintf(stderr, "Please, specify the trnasition band width with -df option\n");
     return -1;
   }
 
@@ -141,7 +141,7 @@ int filter_proc(const arg_list_t &args)
   WAVSource src(input_filename, block_size);
   if (!src.is_open())
   {
-    printf("Error: cannot open file: %s\n", input_filename);
+    fprintf(stderr, "Error: cannot open file: %s\n", input_filename);
     return -1;
   }
 
@@ -150,7 +150,7 @@ int filter_proc(const arg_list_t &args)
   WAVSink sink(output_filename);
   if (!sink.is_file_open() || !sink.open(spk))
   {
-    printf("Error: cannot open file: %s with format %s\n", output_filename, spk.print().c_str());
+    fprintf(stderr, "Error: cannot open file: %s with format %s\n", output_filename, spk.print().c_str());
     return -1;
   }
 
@@ -167,12 +167,12 @@ int filter_proc(const arg_list_t &args)
   };
 
   if (type == ParamFIR::band_pass || type == ParamFIR::band_stop)
-    if (norm) printf("Filter: %s\nFirst bound freq: %.8g (%.8g Hz)\nSecound bound freq: %.8g (%.8g Hz)\nTransition band width: %.8g (%.8g Hz)\n", type_text, f, f * spk.sample_rate , f2, f2 * spk.sample_rate, df, df * spk.sample_rate);
-    else printf("Filter: %s\nFirst bound freq: %.8g Hz\nSecound bound freq: %.8g Hz\nTransition band width: %.8g Hz\n", type_text, f, f2, df);
+    if (norm) fprintf(stderr, "Filter: %s\nFirst bound freq: %.8g (%.8g Hz)\nSecound bound freq: %.8g (%.8g Hz)\nTransition band width: %.8g (%.8g Hz)\n", type_text, f, f * spk.sample_rate , f2, f2 * spk.sample_rate, df, df * spk.sample_rate);
+    else fprintf(stderr, "Filter: %s\nFirst bound freq: %.8g Hz\nSecound bound freq: %.8g Hz\nTransition band width: %.8g Hz\n", type_text, f, f2, df);
   else
-    if (norm) printf("Filter: %s\nBound freq: %.8g (%.8g Hz)\nTransition band width: %.8g (%.8g Hz)\n", type_text, f, f * spk.sample_rate, df, df * spk.sample_rate);
-    else printf("Filter: %s\nBound freq: %.8g Hz\nTransition band width: %.8g Hz\n", type_text, f, df);
-  printf("Attenuation: %.8g dB\n", a);
+    if (norm) fprintf(stderr, "Filter: %s\nBound freq: %.8g (%.8g Hz)\nTransition band width: %.8g (%.8g Hz)\n", type_text, f, f * spk.sample_rate, df, df * spk.sample_rate);
+    else fprintf(stderr, "Filter: %s\nBound freq: %.8g Hz\nTransition band width: %.8g Hz\n", type_text, f, df);
+  fprintf(stderr, "Attenuation: %.8g dB\n", a);
 
   /////////////////////////////////////////////////////////////////////////////
   // Init FIR and print its info
@@ -182,11 +182,11 @@ int filter_proc(const arg_list_t &args)
 
   if (!data)
   {
-    printf("Error in filter parameters!\n");
+    fprintf(stderr, "Error in filter parameters!\n");
     return -1;
   }
 
-  printf("Filter length: %i\n", data->length);
+  fprintf(stderr, "Filter length: %i\n", data->length);
   delete data;
 
 
@@ -218,11 +218,11 @@ int filter_proc(const arg_list_t &args)
 
   if (!chain.open(spk))
   {
-    printf("Error: cannot start processing\n");
+    fprintf(stderr, "Error: cannot start processing\n");
     return -1;
   }
 
-  printf("0%%\r");
+  fprintf(stderr, "0%%\r");
 
   Chunk in_chunk, out_chunk;
   vtime_t t = local_time() + 0.1;
@@ -238,7 +238,7 @@ int filter_proc(const arg_list_t &args)
     {
       t += 0.1;
       double pos = double(src.pos()) * 100 / src.size();
-      printf("%i%%\r", (int)pos);
+      fprintf(stderr, "%i%%\r", (int)pos);
     }
   }
 
@@ -247,7 +247,7 @@ int filter_proc(const arg_list_t &args)
 
   sink.flush();
 
-  printf("100%%\n");
+  fprintf(stderr, "100%%\n");
   return 0;
 }
 
@@ -259,12 +259,12 @@ int main(int argc, const char *argv[])
   }
   catch (ValibException &e)
   {
-    printf("Processing error: %s\n", boost::diagnostic_information(e).c_str());
+    fprintf(stderr, "Processing error: %s\n", boost::diagnostic_information(e).c_str());
     return -1;
   }
   catch (arg_t::bad_value_e &e)
   {
-    printf("Bad argument value: %s", e.arg.c_str());
+    fprintf(stderr, "Bad argument value: %s", e.arg.c_str());
     return -1;
   }
   return 0;

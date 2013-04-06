@@ -18,7 +18,7 @@ int bsconvert_proc(const arg_list_t &args)
 {
   if (args.size() < 2)
   {
-    printf(usage);
+    fprintf(stderr, usage);
     return -1;
   }
 
@@ -53,13 +53,13 @@ int bsconvert_proc(const arg_list_t &args)
       bs_type = BITSTREAM_14LE;
     else
     {
-      printf("Error: Unknown stream format: %s\n", args[3].raw.c_str());
+      fprintf(stderr, "Error: Unknown stream format: %s\n", args[3].raw.c_str());
       return -1;
     }
     break;
 
   default:
-    printf(usage);
+    fprintf(stderr, usage);
     return -1;
   }
 
@@ -71,20 +71,20 @@ int bsconvert_proc(const arg_list_t &args)
   FileParser in_file;
   if (!in_file.open(in_filename, &uni, 1024*1024))
   {
-    printf("Error: Cannot open file '%s'\n", in_filename);
+    fprintf(stderr, "Error: Cannot open file '%s'\n", in_filename);
     return -1;
   }
 
   if (!in_file.probe())
   {
-    printf("Error: Cannot determine file format\n");
+    fprintf(stderr, "Error: Cannot determine file format\n");
     return -1;
   }
 
-  printf("%s", in_file.file_info().c_str());
+  fprintf(stderr, "%s", in_file.file_info().c_str());
   if (!out_filename)
   {
-    printf("%s", in_file.stream_info().c_str());
+    fprintf(stderr, "%s", in_file.stream_info().c_str());
     return 0;
   }
 
@@ -94,7 +94,7 @@ int bsconvert_proc(const arg_list_t &args)
   AutoFile out_file(out_filename, "wb");
   if (!out_file.is_open())
   {
-    printf("Error: Cannot open file for writing '%s'\n", out_filename);
+    fprintf(stderr, "Error: Cannot open file for writing '%s'\n", out_filename);
     return -1;
   }
 
@@ -128,8 +128,8 @@ int bsconvert_proc(const arg_list_t &args)
 
     if (source->new_stream())
     {
-      if (frames) printf("\n\n");
-      printf("%s", in_file.stream_info().c_str());
+      if (frames) fprintf(stderr, "\n\n");
+      fprintf(stderr, "%s", in_file.stream_info().c_str());
 
       finfo = (in_file.get_output().format == FORMAT_SPDIF)?
         despdifer.raw_frame_info():
@@ -138,17 +138,17 @@ int bsconvert_proc(const arg_list_t &args)
       bs_target = bs_type;
       if (is_14bit(bs_target) && finfo.spk.format != FORMAT_DTS)
       {
-        printf(
+        fprintf(stderr, 
           "\nWARNING!!!\n"
           "%s does not support 14bit stream format!\n"
           "It will be converted to byte stream.\n", finfo.spk.format_text());
         bs_target = BITSTREAM_8;
       }
 
-      printf("Conversion from %s to %s\n", bs_name(finfo.bs_type), bs_name(bs_target));
+      fprintf(stderr, "Conversion from %s to %s\n", bs_name(finfo.bs_type), bs_name(bs_target));
       conv = bs_conversion(finfo.bs_type, bs_target);
       if (!conv)
-        printf("Error: Cannot convert!\n");
+        fprintf(stderr, "Error: Cannot convert!\n");
     }
     frames++;
 
@@ -177,7 +177,7 @@ int bsconvert_proc(const arg_list_t &args)
     fprintf(stderr, "Frame: %i\r", frames);
   }
 
-  printf("Frames found: %i\n\n", frames);
+  fprintf(stderr, "Frames found: %i\n\n", frames);
   return 0;
 }
 
@@ -204,7 +204,7 @@ int main(int argc, const char *argv[])
   }
   catch (ValibException &e)
   {
-    printf("Processing error: %s\n", boost::diagnostic_information(e).c_str());
+    fprintf(stderr, "Processing error: %s\n", boost::diagnostic_information(e).c_str());
     return -1;
   }
   return 0;

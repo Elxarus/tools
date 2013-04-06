@@ -62,7 +62,7 @@ int noise_proc(const arg_list_t &args)
 {
   if (args.size() < 2)
   {
-    printf(usage);
+    fprintf(stderr, usage);
     return -1;
   }
 
@@ -122,7 +122,7 @@ int noise_proc(const arg_list_t &args)
     {
       if (sink)
       {
-        printf("-play : ambiguous output mode\n");
+        fprintf(stderr, "-play : ambiguous output mode\n");
         return -1;
       }
 
@@ -136,19 +136,19 @@ int noise_proc(const arg_list_t &args)
     {
       if (sink)
       {
-        printf("-raw : ambiguous output mode\n");
+        fprintf(stderr, "-raw : ambiguous output mode\n");
         return -1;
       }
       if (args.size() - iarg < 1)
       {
-        printf("-raw : specify a file name\n");
+        fprintf(stderr, "-raw : specify a file name\n");
         return -1;
       }
 
       const char *filename = args[++iarg].raw.c_str();
       if (!raw.open_file(filename))
       {
-        printf("-raw : cannot open file '%s'\n", filename);
+        fprintf(stderr, "-raw : cannot open file '%s'\n", filename);
         return -1;
       }
 
@@ -162,19 +162,19 @@ int noise_proc(const arg_list_t &args)
     {
       if (sink)
       {
-        printf("-wav : ambiguous output mode\n");
+        fprintf(stderr, "-wav : ambiguous output mode\n");
         return -1;
       }
       if (args.size() - iarg < 1)
       {
-        printf("-wav : specify a file name\n");
+        fprintf(stderr, "-wav : specify a file name\n");
         return -1;
       }
 
       const char *filename = args[++iarg].raw.c_str();
       if (!wav.open_file(filename))
       {
-        printf("-wav : cannot open file '%s'\n", filename);
+        fprintf(stderr, "-wav : cannot open file '%s'\n", filename);
         return -1;
       }
 
@@ -189,7 +189,7 @@ int noise_proc(const arg_list_t &args)
       continue;
     }
 
-    printf("Error: unknown option: %s\n", arg.raw.c_str());
+    fprintf(stderr, "Error: unknown option: %s\n", arg.raw.c_str());
     return -1;
   }
 
@@ -204,11 +204,11 @@ int noise_proc(const arg_list_t &args)
   }
 
   Speakers spk(format, mask, sample_rate);
-  printf("Opening %s %s %iHz audio output...\n", spk.format_text(), spk.mode_text(), spk.sample_rate);
+  fprintf(stderr, "Opening %s %s %iHz audio output...\n", spk.format_text(), spk.mode_text(), spk.sample_rate);
 
   if (!sink->open(spk))
   {
-    printf("Error: Cannot open audio output!");
+    fprintf(stderr, "Error: Cannot open audio output!");
     return -1;
   }
 
@@ -257,12 +257,12 @@ int main(int argc, const char *argv[])
   }
   catch (ValibException &e)
   {
-    printf("Processing error: %s\n", boost::diagnostic_information(e).c_str());
+    fprintf(stderr, "Processing error: %s\n", boost::diagnostic_information(e).c_str());
     return -1;
   }
   catch (arg_t::bad_value_e &e)
   {
-    printf("Bad argument value: %s", e.arg.c_str());
+    fprintf(stderr, "Bad argument value: %s", e.arg.c_str());
     return -1;
   }
   return 0;
